@@ -1,12 +1,10 @@
 package com.tractionrec.recrec.ui;
 
+import com.tractionrec.recrec.RecRecApplication;
+
 import javax.swing.*;
-import javax.swing.plaf.FontUIResource;
-import javax.swing.text.StyleContext;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Locale;
 
 public class RecRecAbout extends JDialog {
     private JPanel contentPane;
@@ -39,8 +37,7 @@ public class RecRecAbout extends JDialog {
         contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.Y_AXIS));
         JLabel lblVersion = new JLabel();
         String versionInfo = getClass().getPackage().getImplementationVersion();
-
-        lblVersion.setText("<html><p>" + (versionInfo != null ? "v" + versionInfo : "DEV") + "</p><p>Traction Rec</p></html>");
+        lblVersion.setText("<html><p>" + (versionInfo != null ? "v" + versionInfo : "DEV") + "</p><p>Targeting " + (RecRecApplication.isProduction() ? "Production" : "Test") + "</p><p>&copy; Traction Rec</p></html>");
         contentPane.add(lblVersion);
         buttonOK = new JButton();
         buttonOK.setText("OK");

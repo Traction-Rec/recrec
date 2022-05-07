@@ -5,10 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
-import com.tractionrec.recrec.domain.QueryBy;
 import com.tractionrec.recrec.domain.QueryItem;
 import com.tractionrec.recrec.domain.QueryResult;
 import com.tractionrec.recrec.domain.ResultStatus;
@@ -19,7 +17,6 @@ import gg.jte.TemplateOutput;
 import gg.jte.output.StringOutput;
 import org.apache.commons.text.StringEscapeUtils;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -74,7 +71,6 @@ public class QueryService {
                 return new QueryResult(item, ResultStatus.ERROR, queryResponse.responseMessage, Optional.empty());
             }
             final String unescapedReportingData = StringEscapeUtils.unescapeXml(queryResponse.reportingData);
-            System.out.println(unescapedReportingData);
             final List<Transaction> results = mapper.readValue(unescapedReportingData, new TypeReference<List<Transaction>>() {});
             final Transaction latest = results.stream().max(Comparator.comparing((Transaction x) -> x.transactionDate).thenComparing(x -> x.transactionTime)).get();
             return new QueryResult(item, ResultStatus.SUCCESS, queryResponse.responseMessage, Optional.of(latest));

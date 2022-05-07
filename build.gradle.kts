@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.tractionrec"
-version = "1.0.0"
+version = "1.0.1"
 
 repositories {
     mavenCentral()
@@ -19,18 +19,37 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.2")
     implementation("gg.jte:jte:2.0.2")
     implementation("org.apache.commons:commons-text:1.9")
+    implementation("com.jcabi:jcabi-manifests:1.1")
 }
 
 tasks.jar {
     manifest.attributes["Main-Class"] = "com.tractionrec.recrec.RecRecApplication"
     manifest.attributes["Implementation-Version"] = archiveVersion
+    manifest.attributes["Element-Express-Production"] = false
     val dependencies = configurations
             .runtimeClasspath
             .get()
             .map(::zipTree)
     from(dependencies)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archiveBaseName.set("recrec-test")
 }
+
+tasks.register<Jar>("prodJar") {
+    manifest.attributes["Main-Class"] = "com.tractionrec.recrec.RecRecApplication"
+    manifest.attributes["Implementation-Version"] = archiveVersion
+    manifest.attributes["Element-Express-Production"] = true
+    val dependencies = configurations
+            .runtimeClasspath
+            .get()
+            .map(::zipTree)
+    from(dependencies)
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archiveBaseName.set("recrec-prod")
+    from(sourceSets.main.get().output)
+}
+
+tasks.getByName<Jar>("jar").dependsOn("prodJar")
 
 tasks.getByName<Test>("test") {
     useJUnitPlatform()

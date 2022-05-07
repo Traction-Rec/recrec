@@ -5,8 +5,6 @@ import com.tractionrec.recrec.domain.QueryBy;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
@@ -121,7 +119,6 @@ public class RecRecStart extends RecRecForm {
         buttonGroupPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         queryByRecordIdRadioButton = new JRadioButton();
         queryByRecordIdRadioButton.setText("Query by record id");
-        queryByRecordIdRadioButton.setSelected(true);
         queryByRecordIdRadioButton.setToolTipText("Salesforce record id used as ReferenceNumber in WorldPay");
         buttonGroupPanel.add(queryByRecordIdRadioButton);
         queryByVantivIdRadioButton = new JRadioButton();

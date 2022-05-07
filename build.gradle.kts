@@ -1,5 +1,6 @@
 plugins {
     java
+    id("org.beryx.runtime") version "1.12.7"
 }
 
 group = "com.tractionrec"
@@ -25,32 +26,36 @@ dependencies {
 tasks.jar {
     manifest.attributes["Main-Class"] = "com.tractionrec.recrec.RecRecApplication"
     manifest.attributes["Implementation-Version"] = archiveVersion
-    manifest.attributes["Element-Express-Production"] = false
+    manifest.attributes["Element-Express-Production"] = "prod" == project.property("endpoint")
     val dependencies = configurations
             .runtimeClasspath
             .get()
             .map(::zipTree)
     from(dependencies)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    archiveBaseName.set("recrec-test")
+    archiveBaseName.set("recrec-${project.property("endpoint")}")
 }
 
-tasks.register<Jar>("prodJar") {
-    manifest.attributes["Main-Class"] = "com.tractionrec.recrec.RecRecApplication"
-    manifest.attributes["Implementation-Version"] = archiveVersion
-    manifest.attributes["Element-Express-Production"] = true
-    val dependencies = configurations
-            .runtimeClasspath
-            .get()
-            .map(::zipTree)
-    from(dependencies)
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    archiveBaseName.set("recrec-prod")
-    from(sourceSets.main.get().output)
-}
-
-tasks.getByName<Jar>("jar").dependsOn("prodJar")
 
 tasks.getByName<Test>("test") {
     useJUnitPlatform()
+}
+
+application {
+    mainClass.set("com.tractionrec.recrec.RecRecApplication")
+}
+
+runtime {
+    imageDir.set(file("$buildDir/recrec-${project.property("endpoint")}-${version}-image"))
+    imageZip.set(file("$buildDir/recrec-${project.property("endpoint")}-${version}.zip"))
+}
+
+val endpoints = listOf("test", "prod")
+
+endpoints.forEach {
+    val taskName = "runtimeZip${it.capitalize()}"
+    tasks.register<GradleBuild>(taskName) {
+        startParameter.projectProperties = mapOf("endpoint" to it)
+        tasks = listOf("runtimeZip")
+    }
 }

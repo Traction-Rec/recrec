@@ -1,19 +1,16 @@
 package com.tractionrec.recrec;
 
 import com.formdev.flatlaf.FlatLightLaf;
-import com.tractionrec.recrec.domain.QueryBy;
-import com.tractionrec.recrec.domain.QueryItem;
-import com.tractionrec.recrec.domain.QueryResult;
 import com.tractionrec.recrec.service.QueryService;
-import com.tractionrec.recrec.ui.*;
+import com.tractionrec.recrec.ui.RecFormStack;
+import com.tractionrec.recrec.ui.RecRecAbout;
+import com.tractionrec.recrec.ui.RecRecStart;
 import gg.jte.CodeResolver;
 import gg.jte.ContentType;
 import gg.jte.TemplateEngine;
-import gg.jte.resolve.DirectoryCodeResolver;
+import gg.jte.resolve.ResourceCodeResolver;
 
 import javax.swing.*;
-import java.awt.*;
-import java.nio.file.Path;
 
 public class RecRecApplication {
 
@@ -29,7 +26,7 @@ public class RecRecApplication {
     }
 
     private static QueryService buildQueryService() {
-        CodeResolver codeResolver = new DirectoryCodeResolver(Path.of(RecRecApplication.class.getClassLoader().getResource("templates").getPath()));
+        CodeResolver codeResolver = new ResourceCodeResolver("templates");
         TemplateEngine templateEngine = TemplateEngine.create(codeResolver, ContentType.Plain);
         return QueryService.forTest(templateEngine);
     }

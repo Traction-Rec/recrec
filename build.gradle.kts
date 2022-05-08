@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.tractionrec"
-version = "1.0.2"
+version = "1.0.3"
 
 repositories {
     mavenCentral()
@@ -56,6 +56,16 @@ application {
 }
 
 runtime {
+    targetPlatform("mac") {
+        setJdkHome(
+                jdkDownload("https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1%2B9_openj9-0.26.0/OpenJDK16U-jdk_x64_mac_openj9_16.0.1_9_openj9-0.26.0.tar.gz")
+        )
+    }
+    targetPlatform("win") {
+        setJdkHome(
+                jdkDownload("https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1%2B9_openj9-0.26.0/OpenJDK16U-jdk_x64_windows_openj9_16.0.1_9_openj9-0.26.0.zip")
+        )
+    }
     imageDir.set(file("$buildDir/recrec-${project.property("endpoint")}-${version}-image"))
     imageZip.set(file("$buildDir/recrec-${project.property("endpoint")}-${version}.zip"))
 }

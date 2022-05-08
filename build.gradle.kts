@@ -1,6 +1,7 @@
 plugins {
     java
     id("org.beryx.runtime") version "1.12.7"
+    id("gg.jte.gradle") version("2.0.2")
 }
 
 group = "com.tractionrec"
@@ -23,7 +24,16 @@ dependencies {
     implementation("com.jcabi:jcabi-manifests:1.1")
 }
 
+jte {
+    precompile()
+    contentType.set(gg.jte.ContentType.Plain)
+}
+
 tasks.jar {
+    dependsOn(tasks.precompileJte)
+    from(fileTree("jte-classes") {
+        include("**/*.class")
+    })
     manifest.attributes["Main-Class"] = "com.tractionrec.recrec.RecRecApplication"
     manifest.attributes["Implementation-Version"] = archiveVersion
     manifest.attributes["Element-Express-Production"] = "prod" == project.property("endpoint")

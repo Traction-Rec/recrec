@@ -6,12 +6,12 @@ import com.tractionrec.recrec.service.QueryService;
 import com.tractionrec.recrec.ui.RecFormStack;
 import com.tractionrec.recrec.ui.RecRecAbout;
 import com.tractionrec.recrec.ui.RecRecStart;
-import gg.jte.CodeResolver;
 import gg.jte.ContentType;
 import gg.jte.TemplateEngine;
-import gg.jte.resolve.ResourceCodeResolver;
+import gg.jte.resolve.DirectoryCodeResolver;
 
 import javax.swing.*;
+import java.nio.file.Path;
 
 public class RecRecApplication {
 
@@ -28,13 +28,16 @@ public class RecRecApplication {
         stack.displayInitial();
     }
 
+    public static boolean isDevEnv() {
+        return !Manifests.exists(MANIFEST_PROD_PROPERTY_NAME);
+    }
+
     public static boolean isProduction() {
         return Manifests.exists(MANIFEST_PROD_PROPERTY_NAME) && "true".equals(Manifests.read(MANIFEST_PROD_PROPERTY_NAME));
     }
 
     private static QueryService buildQueryService() {
-        CodeResolver codeResolver = new ResourceCodeResolver("templates");
-        TemplateEngine templateEngine = TemplateEngine.create(codeResolver, ContentType.Plain);
+        TemplateEngine templateEngine = isDevEnv() ? TemplateEngine.create(new DirectoryCodeResolver(Path.of("src", "main", "jte")), ContentType.Plain) : TemplateEngine.createPrecompiled(ContentType.Plain);
         return isProduction() ? QueryService.forProduction(templateEngine) : QueryService.forTest(templateEngine);
     }
 

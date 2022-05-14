@@ -1,22 +1,20 @@
 package com.tractionrec.recrec.ui;
 
+import com.fasterxml.jackson.databind.SequenceWriter;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.tractionrec.recrec.RecRecState;
+import com.tractionrec.recrec.domain.OutputRow;
 import com.tractionrec.recrec.domain.QueryItem;
 import com.tractionrec.recrec.domain.QueryResult;
-import com.tractionrec.recrec.domain.express.Transaction;
 
 import javax.swing.*;
-import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Optional;
-import java.util.TimerTask;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -31,54 +29,27 @@ public class RecRecRunning extends RecRecForm {
 
     public RecRecRunning(RecRecState state, NavigationAction navAction) {
         super(state, navAction);
-        this.queryExecutorService = Executors.newFixedThreadPool(5);
+        this.queryExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         nextButton.addActionListener(e -> {
             JFileChooser outputChooser = new JFileChooser();
             int result = outputChooser.showDialog(rootPanel, "Save results");
             if (result == JFileChooser.APPROVE_OPTION) {
-                try {
-                    File outputFile = outputChooser.getSelectedFile();
-                    FileWriter fileWriter = new FileWriter(outputFile);
-                    fileWriter.write("Merchant,Id,Result,Message,Record Id,Vantiv Id,Setup Id,Status,Amount,Billing Name,Stored Account,Card Number,Card Type,DateTime\n");
-                    futureResults.stream().forEachOrdered(f -> {
-                        try {
-                            QueryResult resultToWrite = f.get();
-                            Optional<Transaction> optTx = resultToWrite.expressTransaction();
-                            fileWriter.write(String.format(
-                                    "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
-                                    resultToWrite.item().merchant(),
-                                    resultToWrite.item().id(),
-                                    resultToWrite.status().name(),
-                                    resultToWrite.expressResponseMessage(),
-                                    optTx.isEmpty() ? "" : optTx.get().recordId,
-                                    optTx.isEmpty() ? "" : optTx.get().vantivId,
-                                    optTx.isEmpty() ? "" : optTx.get().setupId,
-                                    optTx.isEmpty() ? "" : optTx.get().status,
-                                    optTx.isEmpty() ? "" : optTx.get().amount.toPlainString(),
-                                    optTx.isEmpty() ? "" : optTx.get().billingName,
-                                    optTx.isEmpty() ? "" : optTx.get().paymentAccountId,
-                                    optTx.isEmpty() ? "" : optTx.get().cardNumberMasked,
-                                    optTx.isEmpty() ? "" : optTx.get().cardType,
-                                    optTx.isEmpty() ? "" : LocalDateTime.of(optTx.get().transactionDate, optTx.get().transactionTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-                            ));
-                        } catch (InterruptedException | ExecutionException ex) {
-                            ex.printStackTrace();
-                            try {
-                                fileWriter.write("Error during write");
-                            } catch (IOException ioex) {
-                                ex.printStackTrace();
-                                ioex.printStackTrace();
-                            }
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                        }
-                    });
-                    fileWriter.close();
-                    state.reset();
-                    navAction.onNext();
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
+                File outputFile = outputChooser.getSelectedFile();
+                try(FileWriter fileWriter = new FileWriter(outputFile)) {
+                    CsvMapper mapper = new CsvMapper();
+                    CsvSchema schema = mapper.schemaFor(OutputRow.class)
+                            .withHeader();
+                    SequenceWriter sequenceWriter = mapper.writer(schema)
+                            .writeValues(fileWriter);
+                    for(Future<QueryResult> f : futureResults) {
+                        List<OutputRow> rows = OutputRow.from(f.get());
+                        sequenceWriter.writeAll(rows);
+                    }
+                } catch (ExecutionException | InterruptedException | IOException ex) {
+                    ex.printStackTrace();
                 }
+                state.reset();
+                navAction.onNext();
             }
         });
         timeExecutorService.scheduleAtFixedRate(() -> {
@@ -138,13 +109,6 @@ public class RecRecRunning extends RecRecForm {
         }
     }
 
-    /**
-     * Method generated by IntelliJ IDEA GUI Designer
-     * >>> IMPORTANT!! <<<
-     * DO NOT edit this method OR call it in your code!
-     *
-     * @noinspection ALL
-     */
     protected void setupUI() {
         rootPanel = new JPanel();
         rootPanel.setBorder( BorderFactory.createEmptyBorder(20,20,20,20) );

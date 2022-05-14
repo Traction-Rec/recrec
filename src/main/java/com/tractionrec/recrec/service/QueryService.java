@@ -24,7 +24,6 @@ import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,8 +71,7 @@ public class QueryService {
             }
             final String unescapedReportingData = StringEscapeUtils.unescapeXml(queryResponse.reportingData);
             final List<Transaction> results = mapper.readValue(unescapedReportingData, new TypeReference<List<Transaction>>() {});
-            final Transaction latest = results.stream().max(Comparator.comparing((Transaction x) -> x.transactionDate).thenComparing(x -> x.transactionTime)).get();
-            return new QueryResult(item, ResultStatus.SUCCESS, queryResponse.responseMessage, Optional.of(latest));
+            return new QueryResult(item, ResultStatus.SUCCESS, queryResponse.responseMessage, Optional.of(results));
         } catch (Exception ex) {
             ex.printStackTrace();
             return new QueryResult(item, ResultStatus.ERROR, ex.getMessage(), Optional.empty());

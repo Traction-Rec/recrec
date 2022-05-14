@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.tractionrec"
-version = "1.0.3"
+version = "1.1.0"
 
 repositories {
     mavenCentral()
@@ -18,6 +18,7 @@ dependencies {
     implementation("org.openjfx:javafx-swing:18.0.1")
     implementation("com.formdev:flatlaf:2.1")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.2")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.13.2")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.2")
     implementation("gg.jte:jte:2.0.2")
     implementation("org.apache.commons:commons-text:1.9")

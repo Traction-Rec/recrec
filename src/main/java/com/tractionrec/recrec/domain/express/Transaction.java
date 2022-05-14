@@ -1,14 +1,8 @@
 package com.tractionrec.recrec.domain.express;
 
-
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -37,6 +31,16 @@ public class Transaction {
     public String paymentAccountId;
     @JacksonXmlProperty(localName = "CardNumberMasked")
     public String cardNumberMasked;
+    @JacksonXmlProperty(localName = "ExpirationMonth")
+    public String expirationMonth;
+    @JacksonXmlProperty(localName = "ExpirationYear")
+    public String expirationYear;
     @JacksonXmlProperty(localName = "CardType")
     public String cardType;
+    @JacksonXmlProperty(localName = "CardLogo")
+    public String cardLogo;
+    @JacksonXmlProperty(localName = "ApprovalNumber")
+    public String approvalNumber;
+    @JacksonXmlProperty(localName = "TransactionType")
+    public String transactionType;
 }

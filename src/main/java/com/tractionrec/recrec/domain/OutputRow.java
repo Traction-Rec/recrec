@@ -9,9 +9,10 @@ import java.util.List;
 import java.util.Optional;
 
 @JsonPropertyOrder({
-        "merchant", "id", "status", "message", "recordId", "vantivId", "setupId", "transactionStatus", "amount",
-        "approvalNumber", "billingName", "paymentAccountId", "cardNumber", "cardType", "cardLogo", "expirationMonth",
-        "expirationYear", "transactionDate", "multipleResults"
+        "merchant", "id", "status", "message", "recordId", "vantivId", "hostTransactionId", "networkTransactionId",
+        "retrievalReferenceNumber", "systemTraceAuditNumber", "trackingId", "ticketNumber", "terminalId", "setupId",
+        "transactionStatus", "amount", "approvalNumber", "billingName", "paymentAccountId", "cardNumber", "cardType",
+        "cardLogo", "expirationMonth", "expirationYear", "transactionDate", "transactionType", "multipleResults"
 })
 public class OutputRow {
     public final String merchant;
@@ -20,6 +21,13 @@ public class OutputRow {
     public final String message;
     public final String recordId;
     public final String vantivId;
+    public final String hostTransactionId;
+    public final String networkTransactionId;
+    public final String retrievalReferenceNumber;
+    public final String systemTraceAuditNumber;
+    public final String trackingId;
+    public final String ticketNumber;
+    public final String terminalId;
     public final String setupId;
     public final String transactionStatus;
     public final String amount;
@@ -32,6 +40,7 @@ public class OutputRow {
     public final String expirationMonth;
     public final String expirationYear;
     public final String transactionDate;
+    public final String transactionType;
     public final boolean multipleResults;
 
     private OutputRow(QueryResult result) {
@@ -41,6 +50,13 @@ public class OutputRow {
         this.message = result.expressResponseMessage();
         this.recordId = null;
         this.vantivId = null;
+        this.hostTransactionId = null;
+        this.networkTransactionId = null;
+        this.retrievalReferenceNumber = null;
+        this.systemTraceAuditNumber = null;
+        this.trackingId = null;
+        this.ticketNumber = null;
+        this.terminalId = null;
         this.setupId = null;
         this.transactionStatus = null;
         this.amount = null;
@@ -53,6 +69,7 @@ public class OutputRow {
         this.expirationMonth = null;
         this.expirationYear = null;
         this.transactionDate = null;
+        this.transactionType = null;
         this.multipleResults = false;
     }
 
@@ -63,6 +80,13 @@ public class OutputRow {
         this.message = result.expressResponseMessage();
         this.recordId = tx.recordId;
         this.vantivId = tx.vantivId;
+        this.hostTransactionId = tx.hostTransactionId;
+        this.networkTransactionId = tx.networkTransactionId;
+        this.retrievalReferenceNumber = tx.retrievalReferenceNumber;
+        this.systemTraceAuditNumber = tx.systemTraceAuditNumber;
+        this.trackingId = tx.trackingId;
+        this.ticketNumber = tx.ticketNumber;
+        this.terminalId = tx.terminalId;
         this.setupId = tx.setupId;
         this.transactionStatus = tx.status;
         this.amount = tx.amount.toPlainString();
@@ -75,6 +99,7 @@ public class OutputRow {
         this.expirationMonth = tx.expirationMonth;
         this.expirationYear = tx.expirationYear;
         this.transactionDate = LocalDateTime.of(tx.transactionDate, tx.transactionTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        this.transactionType = tx.transactionType;
         this.multipleResults = multipleResults;
     }
 

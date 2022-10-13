@@ -19,6 +19,20 @@ public class Transaction {
     public String recordId;
     @JacksonXmlProperty(localName = "TransactionID")
     public String vantivId;
+    @JacksonXmlProperty(localName = "HostTransactionID")
+    public String hostTransactionId;
+    @JacksonXmlProperty(localName = "NetworkTransactionID")
+    public String networkTransactionId;
+    @JacksonXmlProperty(localName = "RetrievalReferenceNumber")
+    public String retrievalReferenceNumber;
+    @JacksonXmlProperty(localName = "SystemTraceAuditNumber")
+    public String systemTraceAuditNumber;
+    @JacksonXmlProperty(localName = "TrackingID")
+    public String trackingId;
+    @JacksonXmlProperty(localName = "TicketNumber")
+    public String ticketNumber;
+    @JacksonXmlProperty(localName = "TerminalID")
+    public String terminalId;
     @JacksonXmlProperty(localName = "TransactionSetupID")
     public String setupId;
     @JacksonXmlProperty(localName = "TransactionAmount")

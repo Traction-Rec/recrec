@@ -57,14 +57,23 @@ application {
 }
 
 runtime {
+    addModules(
+            "java.desktop",
+            "java.compiler",
+            "java.scripting",
+            "java.logging",
+            "java.net.http",
+            "java.xml",
+            "jdk.crypto.ec"
+    )
     targetPlatform("mac") {
         setJdkHome(
-                jdkDownload("https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1%2B9_openj9-0.26.0/OpenJDK16U-jdk_x64_mac_openj9_16.0.1_9_openj9-0.26.0.tar.gz")
+                jdkDownload("https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1%2B9/OpenJDK16U-jdk_x64_mac_hotspot_16.0.1_9.tar.gz")
         )
     }
     targetPlatform("win") {
         setJdkHome(
-                jdkDownload("https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1%2B9_openj9-0.26.0/OpenJDK16U-jdk_x64_windows_openj9_16.0.1_9_openj9-0.26.0.zip")
+                jdkDownload("https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1%2B9/OpenJDK16U-jdk_x64_windows_hotspot_16.0.1_9.zip")
         )
     }
     imageDir.set(file("$buildDir/recrec-${project.property("endpoint")}-${version}-image"))

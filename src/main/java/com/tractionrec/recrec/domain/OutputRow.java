@@ -11,8 +11,9 @@ import java.util.Optional;
 @JsonPropertyOrder({
         "merchant", "id", "status", "message", "recordId", "vantivId", "hostTransactionId", "networkTransactionId",
         "retrievalReferenceNumber", "systemTraceAuditNumber", "trackingId", "ticketNumber", "terminalId", "setupId",
-        "transactionStatus", "amount", "approvalNumber", "billingName", "paymentAccountId", "cardNumber", "cardType",
-        "cardLogo", "expirationMonth", "expirationYear", "transactionDate", "transactionType", "multipleResults"
+        "transactionStatus", "amount", "approvalNumber", "billingName", "billingEmail", "paymentAccountId",
+        "cardNumber", "cardType", "cardLogo", "expirationMonth", "expirationYear", "transactionDate", "transactionType",
+        "multipleResults"
 })
 public class OutputRow {
     public final String merchant;
@@ -33,6 +34,7 @@ public class OutputRow {
     public final String amount;
     public final String approvalNumber;
     public final String billingName;
+    public final String billingEmail;
     public final String paymentAccountId;
     public final String cardNumber;
     public final String cardType;
@@ -62,6 +64,7 @@ public class OutputRow {
         this.amount = null;
         this.approvalNumber = null;
         this.billingName = null;
+        this.billingEmail = null;
         this.paymentAccountId = null;
         this.cardNumber = null;
         this.cardType = null;
@@ -92,6 +95,7 @@ public class OutputRow {
         this.amount = tx.amount.toPlainString();
         this.approvalNumber = tx.approvalNumber;
         this.billingName = tx.billingName;
+        this.billingEmail = tx.billingEmail;
         this.paymentAccountId = tx.paymentAccountId;
         this.cardNumber = tx.cardNumberMasked;
         this.cardType = tx.cardType;

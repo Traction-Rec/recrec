@@ -41,6 +41,8 @@ public class Transaction {
     public String status;
     @JacksonXmlProperty(localName = "BillingName")
     public String billingName;
+    @JacksonXmlProperty(localName = "BillingEmail")
+    public String billingEmail;
     @JacksonXmlProperty(localName = "PaymentAccountID")
     public String paymentAccountId;
     @JacksonXmlProperty(localName = "CardNumberMasked")

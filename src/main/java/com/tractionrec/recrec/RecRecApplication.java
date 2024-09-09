@@ -29,11 +29,11 @@ public class RecRecApplication {
     }
 
     public static boolean isDevEnv() {
-        return true;//!Manifests.exists(MANIFEST_PROD_PROPERTY_NAME);
+        return !Manifests.exists(MANIFEST_PROD_PROPERTY_NAME);
     }
 
     public static boolean isProduction() {
-        return true;//Manifests.exists(MANIFEST_PROD_PROPERTY_NAME) && "true".equals(Manifests.read(MANIFEST_PROD_PROPERTY_NAME));
+        return Manifests.exists(MANIFEST_PROD_PROPERTY_NAME) && "true".equals(Manifests.read(MANIFEST_PROD_PROPERTY_NAME));
     }
 
     private static QueryService buildQueryService() {

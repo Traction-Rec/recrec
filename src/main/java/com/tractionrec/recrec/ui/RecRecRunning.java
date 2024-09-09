@@ -5,6 +5,7 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.tractionrec.recrec.RecRecState;
 import com.tractionrec.recrec.domain.OutputRow;
+import com.tractionrec.recrec.domain.QueryBy;
 import com.tractionrec.recrec.domain.QueryItem;
 import com.tractionrec.recrec.domain.QueryResult;
 
@@ -97,16 +98,30 @@ public class RecRecRunning extends RecRecForm {
                         String[] cols = l.split(",", 2);
                         return new QueryItem(cols[0], cols[1], state.queryMode);
                     })
-                    .map(item -> (Callable<QueryResult>) () -> state.queryService.queryForTransaction(
-                            state.accountId,
-                            state.accountToken,
-                            item
-                    ))
+                    .map(this::getCallable)
                     .map(queryExecutorService::submit)
                     .collect(Collectors.toList());
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private Callable<QueryResult> getCallable(QueryItem item) {
+        return (Callable<QueryResult>) () -> {
+            if(state.queryMode != QueryBy.PAYMENT_ACCOUNT) {
+                return state.queryService.queryForTransaction(
+                        state.accountId,
+                        state.accountToken,
+                        item
+                );
+            } else {
+                return state.queryService.queryForPaymentAccount(
+                        state.accountId,
+                        state.accountToken,
+                        item
+                );
+            }
+        };
     }
 
     protected void setupUI() {

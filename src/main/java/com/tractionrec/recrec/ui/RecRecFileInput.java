@@ -36,6 +36,7 @@ public class RecRecFileInput extends RecRecForm {
             case SETUP_ID -> lblQueryingBy.setText("You are querying by setup id.");
             case RECORD_ID -> lblQueryingBy.setText("You are querying by record id.");
             case VANTIV_ID -> lblQueryingBy.setText("You are querying by vantiv id.");
+            case PAYMENT_ACCOUNT -> lblQueryingBy.setText("You are querying by payment account token.");
         }
         updateNextEnabled();
     }

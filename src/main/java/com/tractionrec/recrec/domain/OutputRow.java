@@ -1,6 +1,8 @@
 package com.tractionrec.recrec.domain;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.tractionrec.recrec.domain.express.ExpressEntity;
+import com.tractionrec.recrec.domain.express.PaymentAccount;
 import com.tractionrec.recrec.domain.express.Transaction;
 
 import java.time.LocalDateTime;
@@ -76,43 +78,73 @@ public class OutputRow {
         this.multipleResults = false;
     }
 
-    private OutputRow(QueryResult result, Transaction tx, boolean multipleResults) {
+    private OutputRow(QueryResult result, ExpressEntity tx, boolean multipleResults) {
         this.merchant = result.item().merchant();
-        this.id = result.item().id();
         this.status = result.status().name();
         this.message = result.expressResponseMessage();
-        this.recordId = tx.recordId;
-        this.vantivId = tx.vantivId;
-        this.hostTransactionId = tx.hostTransactionId;
-        this.networkTransactionId = tx.networkTransactionId;
-        this.retrievalReferenceNumber = tx.retrievalReferenceNumber;
-        this.systemTraceAuditNumber = tx.systemTraceAuditNumber;
-        this.trackingId = tx.trackingId;
-        this.ticketNumber = tx.ticketNumber;
-        this.terminalId = tx.terminalId;
-        this.setupId = tx.setupId;
-        this.transactionStatus = tx.status;
-        this.amount = tx.amount.toPlainString();
-        this.approvalNumber = tx.approvalNumber;
-        this.billingName = tx.billingName;
-        this.billingEmail = tx.billingEmail;
-        this.paymentAccountId = tx.paymentAccountId;
-        this.cardNumber = tx.cardNumberMasked;
-        this.cardType = tx.cardType;
-        this.cardLogo = tx.cardLogo;
-        this.expirationMonth = tx.expirationMonth;
-        this.expirationYear = tx.expirationYear;
-        this.transactionDate = LocalDateTime.of(tx.transactionDate, tx.transactionTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        this.transactionType = tx.transactionType;
-        this.multipleResults = multipleResults;
+        if(tx instanceof Transaction) {
+            Transaction castedTx = (Transaction) tx;
+            this.id = result.item().id();
+            this.recordId = castedTx.recordId;
+            this.vantivId = castedTx.vantivId;
+            this.hostTransactionId = castedTx.hostTransactionId;
+            this.networkTransactionId = castedTx.networkTransactionId;
+            this.retrievalReferenceNumber = castedTx.retrievalReferenceNumber;
+            this.systemTraceAuditNumber = castedTx.systemTraceAuditNumber;
+            this.trackingId = castedTx.trackingId;
+            this.ticketNumber = castedTx.ticketNumber;
+            this.terminalId = castedTx.terminalId;
+            this.setupId = castedTx.setupId;
+            this.transactionStatus = castedTx.status;
+            this.amount = castedTx.amount.toPlainString();
+            this.approvalNumber = castedTx.approvalNumber;
+            this.billingName = castedTx.billingName;
+            this.billingEmail = castedTx.billingEmail;
+            this.paymentAccountId = castedTx.paymentAccountId;
+            this.cardNumber = castedTx.cardNumberMasked;
+            this.cardType = castedTx.cardType;
+            this.cardLogo = castedTx.cardLogo;
+            this.expirationMonth = castedTx.expirationMonth;
+            this.expirationYear = castedTx.expirationYear;
+            this.transactionDate = LocalDateTime.of(castedTx.transactionDate, castedTx.transactionTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            this.transactionType = castedTx.transactionType;
+            this.multipleResults = multipleResults;
+        } else {
+            this.id = ((PaymentAccount) tx).paymentAccountID;
+            this.recordId = null;
+            this.vantivId = null;
+            this.hostTransactionId = null;
+            this.networkTransactionId = null;
+            this.retrievalReferenceNumber = null;
+            this.systemTraceAuditNumber = null;
+            this.trackingId = null;
+            this.ticketNumber = null;
+            this.terminalId = null;
+            this.setupId = null;
+            this.transactionStatus = null;
+            this.amount = null;
+            this.approvalNumber = null;
+            this.billingName = null;
+            this.billingEmail = null;
+            this.paymentAccountId = null;
+            this.cardNumber = null;
+            this.cardType = null;
+            this.cardLogo = null;
+            this.expirationMonth = null;
+            this.expirationYear = null;
+            this.transactionDate = null;
+            this.transactionType = null;
+            this.multipleResults = false;
+        }
+
     }
 
     public static List<OutputRow> from(QueryResult result) {
-        final Optional<List<Transaction>> optTxes = result.expressTransactions();
+        final Optional<List<ExpressEntity>> optTxes = result.expressEntities();
         if(optTxes.isEmpty()) {
             return List.of(new OutputRow(result));
         }
-        final List<Transaction> txes = optTxes.get();
+        final List<ExpressEntity> txes = optTxes.get();
         final boolean multipleResults = txes.size() > 1;
         return txes.stream().map(tx -> new OutputRow(result, tx, multipleResults)).toList();
     }

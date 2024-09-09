@@ -10,11 +10,7 @@ import java.time.LocalTime;
 
 @JacksonXmlRootElement
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Transaction {
-    @JacksonXmlProperty(localName = "ExpressTransactionDate")
-    public LocalDate transactionDate;
-    @JacksonXmlProperty(localName = "ExpressTransactionTime")
-    public LocalTime transactionTime;
+public class Transaction extends ExpressEntity {
     @JacksonXmlProperty(localName = "ReferenceNumber")
     public String recordId;
     @JacksonXmlProperty(localName = "TransactionID")

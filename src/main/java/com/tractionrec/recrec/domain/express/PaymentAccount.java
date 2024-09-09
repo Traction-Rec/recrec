@@ -4,10 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalTime;
-
 @JacksonXmlRootElement
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PaymentAccount extends ExpressEntity {
@@ -23,4 +19,20 @@ public class PaymentAccount extends ExpressEntity {
     public String paymentAccountReferenceNumber;
     @JacksonXmlProperty(localName = "PaymentBrand")
     public String paymentBrand;
+    @JacksonXmlProperty(localName = "TruncatedCardNumber")
+    public String truncatedCardNumber;
+    @JacksonXmlProperty(localName = "ExpirationMonth")
+    public String expiryMonth;
+    @JacksonXmlProperty(localName = "ExpirationYear")
+    public String expiryYear;
+    @JacksonXmlProperty(localName = "BillingName")
+    public String billingName;
+    @JacksonXmlProperty(localName = "BillingAddress1")
+    public String billingAddress1;
+    @JacksonXmlProperty(localName = "BillingCity")
+    public String billingCity;
+    @JacksonXmlProperty(localName = "BillingState")
+    public String billingState;
+    @JacksonXmlProperty(localName = "BillingZipcode")
+    public String billingZipcode;
 }

@@ -5,8 +5,6 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalTime;
 
 @JacksonXmlRootElement
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -37,6 +35,14 @@ public class Transaction extends ExpressEntity {
     public String status;
     @JacksonXmlProperty(localName = "BillingName")
     public String billingName;
+    @JacksonXmlProperty(localName = "BillingAddress1")
+    public String billingAddress1;
+    @JacksonXmlProperty(localName = "BillingCity")
+    public String billingCity;
+    @JacksonXmlProperty(localName = "BillingState")
+    public String billingState;
+    @JacksonXmlProperty(localName = "BillingZipCode")
+    public String billingZipCode;
     @JacksonXmlProperty(localName = "BillingEmail")
     public String billingEmail;
     @JacksonXmlProperty(localName = "PaymentAccountID")

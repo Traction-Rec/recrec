@@ -10,8 +10,7 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
 import com.tractionrec.recrec.domain.QueryItem;
 import com.tractionrec.recrec.domain.QueryResult;
 import com.tractionrec.recrec.domain.ResultStatus;
-import com.tractionrec.recrec.domain.express.Transaction;
-import com.tractionrec.recrec.domain.express.TransactionQueryResponse;
+import com.tractionrec.recrec.domain.express.*;
 import gg.jte.TemplateEngine;
 import gg.jte.TemplateOutput;
 import gg.jte.output.StringOutput;
@@ -47,9 +46,9 @@ public class QueryService {
 
     public QueryResult queryForTransaction(String accountId, String accountToken, QueryItem item) {
         HttpClient client = HttpClient.newHttpClient();
-        String requestBody = getBody(accountId, accountToken, item);
+        String requestBody = getTxBody(accountId, accountToken, item);
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(getUri())
+                .uri(getReportingUri())
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .header("SOAPAction", "https://reporting.elementexpress.com/TransactionQuery")
                 .header("Content-Type", "text/xml")
@@ -78,6 +77,39 @@ public class QueryService {
         }
     }
 
+    public QueryResult queryForPaymentAccount(String accountId, String accountToken, QueryItem item) {
+        HttpClient client = HttpClient.newHttpClient();
+        String requestBody = getPaBody(accountId, accountToken, item);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(getServicesUri())
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .header("SOAPAction", "https://services.elementexpress.com/PaymentAccountQuery")
+                .header("Content-Type", "text/xml")
+                .build();
+        try {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if(response.statusCode() != 200) {
+                return new QueryResult(item, ResultStatus.ERROR, "Status Code: " + response.statusCode(), Optional.empty());
+            }
+            final String responseBody = response.body();
+            final String responseElement = responseBody.substring(responseBody.indexOf("<response>"), responseBody.indexOf("</PaymentAccountQueryResponse>")).trim();
+
+            final PaymentAccountQueryResponse queryResponse = mapper.readValue(responseElement, PaymentAccountQueryResponse.class);
+            if(queryResponse.responseCode == 90) {
+                return new QueryResult(item, ResultStatus.NOT_FOUND, queryResponse.responseMessage, Optional.empty());
+            }
+            if(queryResponse.responseCode != 0) {
+                return new QueryResult(item, ResultStatus.ERROR, queryResponse.responseMessage, Optional.empty());
+            }
+            final String unescapedQueryData = StringEscapeUtils.unescapeXml(queryResponse.queryData);
+            final List<PaymentAccount> results = mapper.readValue(unescapedQueryData, new TypeReference<List<PaymentAccount>>() {});
+            return new QueryResult(item, ResultStatus.SUCCESS, queryResponse.responseMessage, Optional.of(results));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return new QueryResult(item, ResultStatus.ERROR, ex.getMessage(), Optional.empty());
+        }
+    }
+
     public static QueryService forProduction(TemplateEngine templateEngine) {
         return new QueryService(true, templateEngine);
     }
@@ -86,7 +118,7 @@ public class QueryService {
         return new QueryService(false, templateEngine);
     }
 
-    private String getBody(String accountId, String accountToken, QueryItem item) {
+    private String getTxBody(String accountId, String accountToken, QueryItem item) {
         TemplateOutput output = new StringOutput();
         templateEngine.render("transactionQueryPOSTBody.jte", Map.of(
                 "accountId", accountId,
@@ -96,8 +128,22 @@ public class QueryService {
         return output.toString();
     }
 
-    private URI getUri() {
+    private String getPaBody(String accountId, String accountToken, QueryItem item) {
+        TemplateOutput output = new StringOutput();
+        templateEngine.render("paymentAccountQueryPOSTBody.jte", Map.of(
+                "accountId", accountId,
+                "accountToken", accountToken,
+                "queryItem", item
+        ), output);
+        return output.toString();
+    }
+
+    private URI getReportingUri() {
         return isProduction ? URI.create("https://reporting.elementexpress.com/express.asmx") : URI.create("https://certreporting.elementexpress.com/express.asmx");
+    }
+
+    private URI getServicesUri() {
+        return isProduction ? URI.create("https://services.elementexpress.com/express.asmx") : URI.create("https://certservices.elementexpress.com/express.asmx");
     }
 
 }

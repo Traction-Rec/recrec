@@ -45,7 +45,7 @@ public class RecRecRunning extends RecRecForm {
 
     public RecRecRunning(RecRecState state, NavigationAction navAction) {
         super(state, navAction);
-        this.queryExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        this.queryExecutorService = Executors.newVirtualThreadPerTaskExecutor();
         nextButton.addActionListener(e -> {
             JFileChooser outputChooser = new JFileChooser();
             int result = outputChooser.showDialog(rootPanel, "Save results");

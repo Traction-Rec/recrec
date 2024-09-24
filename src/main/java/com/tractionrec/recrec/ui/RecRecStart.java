@@ -16,6 +16,7 @@ public class RecRecStart extends RecRecForm {
     private JRadioButton queryByVantivIdRadioButton;
     private JRadioButton queryBySetupIdRadioButton;
     private JRadioButton queryPaymentAccountsButton;
+    private JRadioButton queryBINButton;
     private JButton nextButton;
     private JPanel rootPanel;
 
@@ -47,11 +48,14 @@ public class RecRecStart extends RecRecForm {
         queryPaymentAccountsButton.addActionListener(e -> {
             updateNextEnabled();
         });
+        queryBINButton.addActionListener(e -> {
+            updateNextEnabled();
+        });
         nextButton.addActionListener(e -> navigationAction.onNext());
     }
 
     private boolean isUserFinished() {
-        return !inpAccountId.getText().isBlank() && inpAccountToken.getPassword().length > 0 && (queryByRecordIdRadioButton.isSelected() || queryBySetupIdRadioButton.isSelected() || queryByVantivIdRadioButton.isSelected() || queryPaymentAccountsButton.isSelected());
+        return !inpAccountId.getText().isBlank() && inpAccountToken.getPassword().length > 0 && (queryByRecordIdRadioButton.isSelected() || queryBySetupIdRadioButton.isSelected() || queryByVantivIdRadioButton.isSelected() || queryPaymentAccountsButton.isSelected() || queryBINButton.isSelected());
     }
 
     @Override
@@ -62,6 +66,7 @@ public class RecRecStart extends RecRecForm {
         this.queryByVantivIdRadioButton.setSelected(state.queryMode == QueryBy.VANTIV_ID);
         this.queryBySetupIdRadioButton.setSelected(state.queryMode == QueryBy.SETUP_ID);
         this.queryPaymentAccountsButton.setSelected(state.queryMode == QueryBy.PAYMENT_ACCOUNT);
+        this.queryBINButton.setSelected(state.queryMode == QueryBy.BIN_QUERY);
     }
 
     @Override
@@ -72,6 +77,7 @@ public class RecRecStart extends RecRecForm {
         if (queryByVantivIdRadioButton.isSelected()) state.queryMode = QueryBy.VANTIV_ID;
         if (queryBySetupIdRadioButton.isSelected()) state.queryMode = QueryBy.SETUP_ID;
         if (queryPaymentAccountsButton.isSelected()) state.queryMode = QueryBy.PAYMENT_ACCOUNT;
+        if (queryBINButton.isSelected()) state.queryMode = QueryBy.BIN_QUERY;
     }
 
     @Override
@@ -139,11 +145,16 @@ public class RecRecStart extends RecRecForm {
         queryPaymentAccountsButton.setText("Query payment accounts by token");
         queryPaymentAccountsButton.setToolTipText("Payment tokens found on stored account records. Token column name is still id");
         buttonGroupPanel.add(queryPaymentAccountsButton);
+        queryBINButton = new JRadioButton();
+        queryBINButton.setText("Query BIN by payment token");
+        queryBINButton.setToolTipText("Payment tokens found on stored account records. Token column name is still id");
+        buttonGroupPanel.add(queryBINButton);
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(queryByRecordIdRadioButton);
         buttonGroup.add(queryByVantivIdRadioButton);
         buttonGroup.add(queryBySetupIdRadioButton);
         buttonGroup.add(queryPaymentAccountsButton);
+        buttonGroup.add(queryBINButton);
         rootPanel.add(buttonGroupPanel);
 
         JPanel navigationPanel = new JPanel();

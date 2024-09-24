@@ -2,16 +2,11 @@ package com.tractionrec.recrec;
 
 import com.formdev.flatlaf.FlatLightLaf;
 import com.jcabi.manifests.Manifests;
-import com.tractionrec.recrec.service.QueryService;
 import com.tractionrec.recrec.ui.RecFormStack;
 import com.tractionrec.recrec.ui.RecRecAbout;
 import com.tractionrec.recrec.ui.RecRecStart;
-import gg.jte.ContentType;
-import gg.jte.TemplateEngine;
-import gg.jte.resolve.DirectoryCodeResolver;
 
 import javax.swing.*;
-import java.nio.file.Path;
 
 public class RecRecApplication {
 
@@ -19,7 +14,7 @@ public class RecRecApplication {
 
     public static void main(String[] args) {
         FlatLightLaf.setup();
-        RecRecState state = new RecRecState(buildQueryService());
+        RecRecState state = new RecRecState();
         JFrame applicationFrame = new JFrame("RecRec");
         applicationFrame.setJMenuBar(buildMenuBar());
         RecFormStack stack = new RecFormStack(applicationFrame);
@@ -34,11 +29,6 @@ public class RecRecApplication {
 
     public static boolean isProduction() {
         return Manifests.exists(MANIFEST_PROD_PROPERTY_NAME) && "true".equals(Manifests.read(MANIFEST_PROD_PROPERTY_NAME));
-    }
-
-    private static QueryService buildQueryService() {
-        TemplateEngine templateEngine = isDevEnv() ? TemplateEngine.create(new DirectoryCodeResolver(Path.of("src", "main", "jte")), ContentType.Plain) : TemplateEngine.createPrecompiled(ContentType.Plain);
-        return isProduction() ? QueryService.forProduction(templateEngine) : QueryService.forTest(templateEngine);
     }
 
     private static JMenuBar buildMenuBar() {

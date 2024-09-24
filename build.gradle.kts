@@ -1,14 +1,20 @@
 plugins {
     java
-    id("org.beryx.runtime") version "1.12.7"
-    id("gg.jte.gradle") version("2.0.2")
+    id("org.beryx.runtime") version "1.13.1"
+    id("gg.jte.gradle") version("3.1.12")
 }
 
 group = "com.tractionrec"
-version = "1.4.0"
+version = "1.5.0"
 
 repositories {
     mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
 }
 
 dependencies {
@@ -54,6 +60,7 @@ tasks.getByName<Test>("test") {
 
 application {
     mainClass.set("com.tractionrec.recrec.RecRecApplication")
+    applicationDefaultJvmArgs = listOf("-Djdk.httpclient.connectionPoolSize=10")
 }
 
 runtime {
@@ -68,12 +75,12 @@ runtime {
     )
     targetPlatform("mac") {
         setJdkHome(
-                jdkDownload("https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1%2B9/OpenJDK16U-jdk_x64_mac_hotspot_16.0.1_9.tar.gz")
+                jdkDownload("https://corretto.aws/downloads/latest/amazon-corretto-21-x64-macos-jdk.tar.gz")
         )
     }
     targetPlatform("win") {
         setJdkHome(
-                jdkDownload("https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1%2B9/OpenJDK16U-jdk_x64_windows_hotspot_16.0.1_9.zip")
+                jdkDownload("https://corretto.aws/downloads/latest/amazon-corretto-21-x64-windows-jdk.zip")
         )
     }
     imageDir.set(file("$buildDir/recrec-${project.property("endpoint")}-${version}-image"))

@@ -43,6 +43,9 @@ public class RecRecRunning extends RecRecForm {
     private JButton nextButton;
     private List<Future<QueryResult>> futureResults;
 
+    private static final int MAX_CONCURRENT_REQUESTS = 50;
+    private final Semaphore requestSemaphore = new Semaphore(MAX_CONCURRENT_REQUESTS, false);
+
     public RecRecRunning(RecRecState state, NavigationAction navAction) {
         super(state, navAction);
         this.queryExecutorService = Executors.newVirtualThreadPerTaskExecutor();
@@ -124,29 +127,50 @@ public class RecRecRunning extends RecRecForm {
         return () -> state.queryMode.accept(new QueryTargetVisitor<QueryResult>() {
             @Override
             public TransactionQueryResult visitTransactionQuery() {
-                return buildTransactionQueryService().queryForTransaction(
-                        state.accountId,
-                        state.accountToken,
-                        item
-                );
+                try {
+                    requestSemaphore.acquire();
+                    TransactionQueryResult r = buildTransactionQueryService().queryForTransaction(
+                            state.accountId,
+                            state.accountToken,
+                            item
+                    );
+                    requestSemaphore.release();
+                    return r;
+                } catch (InterruptedException e) {
+                    return null;
+                }
             }
 
             @Override
             public PaymentAccountQueryResult visitPaymentAccountQuery() {
-                return buildPaymentAccountQueryService().queryForPaymentAccount(
-                        state.accountId,
-                        state.accountToken,
-                        item
-                );
+                try {
+                    requestSemaphore.acquire();
+                    PaymentAccountQueryResult r = buildPaymentAccountQueryService().queryForPaymentAccount(
+                            state.accountId,
+                            state.accountToken,
+                            item
+                    );
+                    requestSemaphore.release();
+                    return r;
+                } catch (InterruptedException e) {
+                    return null;
+                }
             }
 
             @Override
             public BINQueryResult visitBINQuery() {
-                return buildBINQueryService().queryForBINInfo(
-                        state.accountId,
-                        state.accountToken,
-                        item
-                );
+                try {
+                    requestSemaphore.acquire();
+                    BINQueryResult r = buildBINQueryService().queryForBINInfo(
+                            state.accountId,
+                            state.accountToken,
+                            item
+                    );
+                    requestSemaphore.release();
+                    return r;
+                } catch (InterruptedException e) {
+                    return null;
+                }
             }
         });
     }

@@ -4,10 +4,21 @@ import com.fasterxml.jackson.databind.SequenceWriter;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.tractionrec.recrec.RecRecState;
-import com.tractionrec.recrec.domain.OutputRow;
-import com.tractionrec.recrec.domain.QueryBy;
 import com.tractionrec.recrec.domain.QueryItem;
-import com.tractionrec.recrec.domain.QueryResult;
+import com.tractionrec.recrec.domain.QueryTargetVisitor;
+import com.tractionrec.recrec.domain.output.BINQueryOutputRow;
+import com.tractionrec.recrec.domain.output.PaymentAccountQueryOutputRow;
+import com.tractionrec.recrec.domain.output.TransactionQueryOutputRow;
+import com.tractionrec.recrec.domain.result.BINQueryResult;
+import com.tractionrec.recrec.domain.result.PaymentAccountQueryResult;
+import com.tractionrec.recrec.domain.result.QueryResult;
+import com.tractionrec.recrec.domain.result.TransactionQueryResult;
+import com.tractionrec.recrec.service.BINQueryService;
+import com.tractionrec.recrec.service.PaymentAccountQueryService;
+import com.tractionrec.recrec.service.TransactionQueryService;
+import gg.jte.ContentType;
+import gg.jte.TemplateEngine;
+import gg.jte.resolve.DirectoryCodeResolver;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,10 +26,14 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
+import static com.tractionrec.recrec.RecRecApplication.isDevEnv;
+import static com.tractionrec.recrec.RecRecApplication.isProduction;
 
 public class RecRecRunning extends RecRecForm {
     private final ExecutorService queryExecutorService;
@@ -28,22 +43,24 @@ public class RecRecRunning extends RecRecForm {
     private JButton nextButton;
     private List<Future<QueryResult>> futureResults;
 
+    private static final int MAX_CONCURRENT_REQUESTS = 50;
+    private final Semaphore requestSemaphore = new Semaphore(MAX_CONCURRENT_REQUESTS, false);
+
     public RecRecRunning(RecRecState state, NavigationAction navAction) {
         super(state, navAction);
-        this.queryExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        this.queryExecutorService = Executors.newVirtualThreadPerTaskExecutor();
         nextButton.addActionListener(e -> {
             JFileChooser outputChooser = new JFileChooser();
             int result = outputChooser.showDialog(rootPanel, "Save results");
             if (result == JFileChooser.APPROVE_OPTION) {
                 File outputFile = outputChooser.getSelectedFile();
-                try(FileWriter fileWriter = new FileWriter(outputFile)) {
+                try (FileWriter fileWriter = new FileWriter(outputFile)) {
                     CsvMapper mapper = new CsvMapper();
-                    CsvSchema schema = mapper.schemaFor(OutputRow.class)
-                            .withHeader();
+                    CsvSchema schema = getResultSchema(mapper);
                     SequenceWriter sequenceWriter = mapper.writer(schema)
                             .writeValues(fileWriter);
-                    for(Future<QueryResult> f : futureResults) {
-                        List<OutputRow> rows = OutputRow.from(f.get());
+                    for (Future<QueryResult> f : futureResults) {
+                        List<?> rows = f.get().getOutputRows();
                         sequenceWriter.writeAll(rows);
                     }
                 } catch (ExecutionException | InterruptedException | IOException ex) {
@@ -67,7 +84,7 @@ public class RecRecRunning extends RecRecForm {
                     } else {
                         try {
                             final QueryResult result = f.get();
-                            switch (result.status()) {
+                            switch (result.getStatus()) {
                                 case ERROR -> errorCount.getAndIncrement();
                                 case NOT_FOUND -> notFoundCount.getAndIncrement();
                                 case SUCCESS -> successCount.getAndIncrement();
@@ -107,31 +124,87 @@ public class RecRecRunning extends RecRecForm {
     }
 
     private Callable<QueryResult> getCallable(QueryItem item) {
-        return (Callable<QueryResult>) () -> {
-            if(state.queryMode != QueryBy.PAYMENT_ACCOUNT) {
-                return state.queryService.queryForTransaction(
-                        state.accountId,
-                        state.accountToken,
-                        item
-                );
-            } else {
-                return state.queryService.queryForPaymentAccount(
-                        state.accountId,
-                        state.accountToken,
-                        item
-                );
+        return () -> state.queryMode.accept(new QueryTargetVisitor<QueryResult>() {
+            @Override
+            public TransactionQueryResult visitTransactionQuery() {
+                try {
+                    requestSemaphore.acquire();
+                    TransactionQueryResult r = buildTransactionQueryService().queryForTransaction(
+                            state.accountId,
+                            state.accountToken,
+                            item
+                    );
+                    requestSemaphore.release();
+                    return r;
+                } catch (InterruptedException e) {
+                    return null;
+                }
             }
-        };
+
+            @Override
+            public PaymentAccountQueryResult visitPaymentAccountQuery() {
+                try {
+                    requestSemaphore.acquire();
+                    PaymentAccountQueryResult r = buildPaymentAccountQueryService().queryForPaymentAccount(
+                            state.accountId,
+                            state.accountToken,
+                            item
+                    );
+                    requestSemaphore.release();
+                    return r;
+                } catch (InterruptedException e) {
+                    return null;
+                }
+            }
+
+            @Override
+            public BINQueryResult visitBINQuery() {
+                try {
+                    requestSemaphore.acquire();
+                    BINQueryResult r = buildBINQueryService().queryForBINInfo(
+                            state.accountId,
+                            state.accountToken,
+                            item
+                    );
+                    requestSemaphore.release();
+                    return r;
+                } catch (InterruptedException e) {
+                    return null;
+                }
+            }
+        });
+    }
+
+    private CsvSchema getResultSchema(CsvMapper mapper) {
+        return state.queryMode.accept(new QueryTargetVisitor<CsvSchema>() {
+            @Override
+            public CsvSchema visitTransactionQuery() {
+                return mapper.schemaFor(TransactionQueryOutputRow.class)
+                        .withHeader();
+            }
+
+            @Override
+            public CsvSchema visitPaymentAccountQuery() {
+                return mapper.schemaFor(PaymentAccountQueryOutputRow.class)
+                        .withHeader();
+            }
+
+            @Override
+            public CsvSchema visitBINQuery() {
+                return mapper.schemaFor(BINQueryOutputRow.class)
+                        .withHeader();
+            }
+        });
     }
 
     protected void setupUI() {
         rootPanel = new JPanel();
-        rootPanel.setBorder( BorderFactory.createEmptyBorder(20,20,20,20) );
+        rootPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         rootPanel.setLayout(new BoxLayout(rootPanel, BoxLayout.Y_AXIS));
-        rootPanel.setAlignmentX( Component.LEFT_ALIGNMENT );
-        rootPanel.setAlignmentY( Component.TOP_ALIGNMENT );
+        rootPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.setAlignmentY(Component.TOP_ALIGNMENT);
         txtProgress = new JLabel();
-        txtProgress.setAlignmentX( Component.LEFT_ALIGNMENT );
+        txtProgress.setAlignmentX(Component.LEFT_ALIGNMENT);
         txtProgress.setText("Running....");
         rootPanel.add(txtProgress);
 
@@ -143,6 +216,21 @@ public class RecRecRunning extends RecRecForm {
         nextButton.setText("Next >");
         navigationPanel.add(nextButton);
         rootPanel.add(navigationPanel);
+    }
+
+    private static TransactionQueryService buildTransactionQueryService() {
+        TemplateEngine templateEngine = isDevEnv() ? TemplateEngine.create(new DirectoryCodeResolver(Path.of("src", "main", "jte")), ContentType.Plain) : TemplateEngine.createPrecompiled(ContentType.Plain);
+        return isProduction() ? TransactionQueryService.forProduction(templateEngine) : TransactionQueryService.forTest(templateEngine);
+    }
+
+    private static PaymentAccountQueryService buildPaymentAccountQueryService() {
+        TemplateEngine templateEngine = isDevEnv() ? TemplateEngine.create(new DirectoryCodeResolver(Path.of("src", "main", "jte")), ContentType.Plain) : TemplateEngine.createPrecompiled(ContentType.Plain);
+        return isProduction() ? PaymentAccountQueryService.forProduction(templateEngine) : PaymentAccountQueryService.forTest(templateEngine);
+    }
+
+    private static BINQueryService buildBINQueryService() {
+        TemplateEngine templateEngine = isDevEnv() ? TemplateEngine.create(new DirectoryCodeResolver(Path.of("src", "main", "jte")), ContentType.Plain) : TemplateEngine.createPrecompiled(ContentType.Plain);
+        return isProduction() ? BINQueryService.forProduction(templateEngine) : BINQueryService.forTest(templateEngine);
     }
 
 }

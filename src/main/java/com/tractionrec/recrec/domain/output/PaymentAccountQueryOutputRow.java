@@ -6,7 +6,7 @@ import com.tractionrec.recrec.domain.result.QueryResult;
 
 @JsonPropertyOrder({
         "merchant", "id", "status", "message", "recordId", "paymentAccountId", "paymentAccountType",
-        "amount", "billingName", "billingAddress1", "billingCity", "billingState", "billingZip",
+        "amount", "billingName", "billingEmail", "billingAddress1", "billingCity", "billingState", "billingZip",
         "cardNumber", "truncatedAccountNumber", "truncatedRoutingNumber", "cardLogo",
         "expirationMonth", "expirationYear"
 })
@@ -20,6 +20,7 @@ public class PaymentAccountQueryOutputRow extends OutputRow {
     public String paymentAccountType;
     public String amount;
     public String billingName;
+    public String billingEmail;
     public String cardNumber;
     public String truncatedAccountNumber;
     public String truncatedRoutingNumber;
@@ -40,6 +41,7 @@ public class PaymentAccountQueryOutputRow extends OutputRow {
         this.truncatedAccountNumber = entity.truncatedAccountNumber;
         this.truncatedRoutingNumber = entity.truncatedRoutingNumber;
         this.billingName = entity.billingName;
+        this.billingEmail = entity.billingEmail;
         this.billingAddress1 = entity.billingAddress1;
         this.billingCity = entity.billingCity;
         this.billingState = entity.billingState;

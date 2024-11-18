@@ -27,6 +27,8 @@ public class PaymentAccount extends ExpressEntity {
     public String expiryYear;
     @JacksonXmlProperty(localName = "BillingName")
     public String billingName;
+    @JacksonXmlProperty(localName = "BillingEmail")
+    public String billingEmail;
     @JacksonXmlProperty(localName = "BillingAddress1")
     public String billingAddress1;
     @JacksonXmlProperty(localName = "BillingCity")

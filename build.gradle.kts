@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.tractionrec"
-version = "1.7.0"
+version = "1.7.1"
 
 repositories {
     mavenCentral()
@@ -27,7 +27,7 @@ dependencies {
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.13.2")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.2")
     implementation("gg.jte:jte:2.0.2")
-    implementation("org.apache.commons:commons-text:1.9")
+    implementation("org.apache.commons:commons-text:1.12.0")
     implementation("com.jcabi:jcabi-manifests:1.1")
 }
 

@@ -60,8 +60,10 @@ public class RecRecRunning extends RecRecForm {
                     SequenceWriter sequenceWriter = mapper.writer(schema)
                             .writeValues(fileWriter);
                     for (Future<QueryResult> f : futureResults) {
-                        List<?> rows = f.get().getOutputRows();
-                        sequenceWriter.writeAll(rows);
+                        if(f.get() != null) {
+                            List<?> rows = f.get().getOutputRows();
+                            sequenceWriter.writeAll(rows);
+                        }
                     }
                 } catch (ExecutionException | InterruptedException | IOException ex) {
                     ex.printStackTrace();
@@ -79,21 +81,19 @@ public class RecRecRunning extends RecRecForm {
             if (futureResults != null) {
                 futureResults.stream().forEach(f -> {
                     totalCount.getAndIncrement();
-                    if(f != null) {
-                        if (!f.isDone()) {
-                            pendingCount.getAndIncrement();
-                        } else {
-                            try {
-                                final QueryResult result = f.get();
-                                switch (result.getStatus()) {
-                                    case ERROR -> errorCount.getAndIncrement();
-                                    case NOT_FOUND -> notFoundCount.getAndIncrement();
-                                    case SUCCESS -> successCount.getAndIncrement();
-                                }
-                            } catch (InterruptedException | ExecutionException e) {
-                                e.printStackTrace();
-                                errorCount.getAndIncrement();
+                    if (!f.isDone()) {
+                        pendingCount.getAndIncrement();
+                    } else {
+                        try {
+                            final QueryResult result = f.get();
+                            switch (result.getStatus()) {
+                                case ERROR -> errorCount.getAndIncrement();
+                                case NOT_FOUND -> notFoundCount.getAndIncrement();
+                                case SUCCESS -> successCount.getAndIncrement();
                             }
+                        } catch (InterruptedException | ExecutionException e) {
+                            e.printStackTrace();
+                            errorCount.getAndIncrement();
                         }
                     }
                 });

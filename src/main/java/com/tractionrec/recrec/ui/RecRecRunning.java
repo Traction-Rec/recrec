@@ -97,9 +97,6 @@ public class RecRecRunning extends RecRecForm {
                 });
             }
             txtProgress.setText(String.format("<html><p>Total: %d</p><p>Pending: %d</p><p>Error: %d</p><p>Not Found: %d</p><p>Success: %d</p></html>", totalCount.get(), pendingCount.get(), errorCount.get(), notFoundCount.get(), successCount.get()));
-            if (pendingCount.get() == 0 && totalCount.get() > 0) {
-                nextButton.setEnabled(true);
-            }
         }, 1, 1, TimeUnit.SECONDS);
     }
 
@@ -134,9 +131,12 @@ public class RecRecRunning extends RecRecForm {
                             state.accountToken,
                             item
                     );
-                    requestSemaphore.release();
                     return r;
                 } catch (InterruptedException e) {
+                    return null;
+                } catch (Exception e) {
+                    // Release on other exceptions
+                    requestSemaphore.release();
                     return null;
                 }
             }
@@ -150,9 +150,12 @@ public class RecRecRunning extends RecRecForm {
                             state.accountToken,
                             item
                     );
-                    requestSemaphore.release();
                     return r;
                 } catch (InterruptedException e) {
+                    return null;
+                } catch (Exception e) {
+                    // Release on other exceptions
+                    requestSemaphore.release();
                     return null;
                 }
             }
@@ -166,9 +169,12 @@ public class RecRecRunning extends RecRecForm {
                             state.accountToken,
                             item
                     );
-                    requestSemaphore.release();
                     return r;
                 } catch (InterruptedException e) {
+                    return null;
+                } catch (Exception e) {
+                    // Release on other exceptions
+                    requestSemaphore.release();
                     return null;
                 }
             }
@@ -212,7 +218,6 @@ public class RecRecRunning extends RecRecForm {
         navigationPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         navigationPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
         nextButton = new JButton();
-        nextButton.setEnabled(false);
         nextButton.setText("Next >");
         navigationPanel.add(nextButton);
         rootPanel.add(navigationPanel);

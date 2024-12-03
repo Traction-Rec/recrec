@@ -60,8 +60,10 @@ public class RecRecRunning extends RecRecForm {
                     SequenceWriter sequenceWriter = mapper.writer(schema)
                             .writeValues(fileWriter);
                     for (Future<QueryResult> f : futureResults) {
-                        List<?> rows = f.get().getOutputRows();
-                        sequenceWriter.writeAll(rows);
+                        if(f.get() != null) {
+                            List<?> rows = f.get().getOutputRows();
+                            sequenceWriter.writeAll(rows);
+                        }
                     }
                 } catch (ExecutionException | InterruptedException | IOException ex) {
                     ex.printStackTrace();
@@ -97,9 +99,6 @@ public class RecRecRunning extends RecRecForm {
                 });
             }
             txtProgress.setText(String.format("<html><p>Total: %d</p><p>Pending: %d</p><p>Error: %d</p><p>Not Found: %d</p><p>Success: %d</p></html>", totalCount.get(), pendingCount.get(), errorCount.get(), notFoundCount.get(), successCount.get()));
-            if (pendingCount.get() == 0 && totalCount.get() > 0) {
-                nextButton.setEnabled(true);
-            }
         }, 1, 1, TimeUnit.SECONDS);
     }
 
@@ -134,10 +133,12 @@ public class RecRecRunning extends RecRecForm {
                             state.accountToken,
                             item
                     );
-                    requestSemaphore.release();
                     return r;
-                } catch (InterruptedException e) {
+                } catch (Exception e) {
+                    e.printStackTrace();
                     return null;
+                } finally {
+                    requestSemaphore.release();
                 }
             }
 
@@ -150,10 +151,12 @@ public class RecRecRunning extends RecRecForm {
                             state.accountToken,
                             item
                     );
-                    requestSemaphore.release();
                     return r;
-                } catch (InterruptedException e) {
+                } catch (Exception e) {
+                    e.printStackTrace();
                     return null;
+                } finally {
+                    requestSemaphore.release();
                 }
             }
 
@@ -166,10 +169,12 @@ public class RecRecRunning extends RecRecForm {
                             state.accountToken,
                             item
                     );
-                    requestSemaphore.release();
                     return r;
-                } catch (InterruptedException e) {
+                } catch (Exception e) {
+                    e.printStackTrace();
                     return null;
+                } finally {
+                    requestSemaphore.release();
                 }
             }
         });
@@ -212,7 +217,6 @@ public class RecRecRunning extends RecRecForm {
         navigationPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         navigationPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
         nextButton = new JButton();
-        nextButton.setEnabled(false);
         nextButton.setText("Next >");
         navigationPanel.add(nextButton);
         rootPanel.add(navigationPanel);

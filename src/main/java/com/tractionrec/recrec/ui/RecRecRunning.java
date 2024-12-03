@@ -135,6 +135,7 @@ public class RecRecRunning extends RecRecForm {
                     );
                     return r;
                 } catch (Exception e) {
+                    e.printStackTrace();
                     return null;
                 } finally {
                     requestSemaphore.release();
@@ -152,6 +153,7 @@ public class RecRecRunning extends RecRecForm {
                     );
                     return r;
                 } catch (Exception e) {
+                    e.printStackTrace();
                     return null;
                 } finally {
                     requestSemaphore.release();
@@ -169,6 +171,7 @@ public class RecRecRunning extends RecRecForm {
                     );
                     return r;
                 } catch (Exception e) {
+                    e.printStackTrace();
                     return null;
                 } finally {
                     requestSemaphore.release();

@@ -79,19 +79,21 @@ public class RecRecRunning extends RecRecForm {
             if (futureResults != null) {
                 futureResults.stream().forEach(f -> {
                     totalCount.getAndIncrement();
-                    if (!f.isDone()) {
-                        pendingCount.getAndIncrement();
-                    } else {
-                        try {
-                            final QueryResult result = f.get();
-                            switch (result.getStatus()) {
-                                case ERROR -> errorCount.getAndIncrement();
-                                case NOT_FOUND -> notFoundCount.getAndIncrement();
-                                case SUCCESS -> successCount.getAndIncrement();
+                    if(f != null) {
+                        if (!f.isDone()) {
+                            pendingCount.getAndIncrement();
+                        } else {
+                            try {
+                                final QueryResult result = f.get();
+                                switch (result.getStatus()) {
+                                    case ERROR -> errorCount.getAndIncrement();
+                                    case NOT_FOUND -> notFoundCount.getAndIncrement();
+                                    case SUCCESS -> successCount.getAndIncrement();
+                                }
+                            } catch (InterruptedException | ExecutionException e) {
+                                e.printStackTrace();
+                                errorCount.getAndIncrement();
                             }
-                        } catch (InterruptedException | ExecutionException e) {
-                            e.printStackTrace();
-                            errorCount.getAndIncrement();
                         }
                     }
                 });
@@ -132,12 +134,10 @@ public class RecRecRunning extends RecRecForm {
                             item
                     );
                     return r;
-                } catch (InterruptedException e) {
-                    return null;
                 } catch (Exception e) {
-                    // Release on other exceptions
-                    requestSemaphore.release();
                     return null;
+                } finally {
+                    requestSemaphore.release();
                 }
             }
 
@@ -151,12 +151,10 @@ public class RecRecRunning extends RecRecForm {
                             item
                     );
                     return r;
-                } catch (InterruptedException e) {
-                    return null;
                 } catch (Exception e) {
-                    // Release on other exceptions
-                    requestSemaphore.release();
                     return null;
+                } finally {
+                    requestSemaphore.release();
                 }
             }
 
@@ -170,12 +168,10 @@ public class RecRecRunning extends RecRecForm {
                             item
                     );
                     return r;
-                } catch (InterruptedException e) {
-                    return null;
                 } catch (Exception e) {
-                    // Release on other exceptions
-                    requestSemaphore.release();
                     return null;
+                } finally {
+                    requestSemaphore.release();
                 }
             }
         });

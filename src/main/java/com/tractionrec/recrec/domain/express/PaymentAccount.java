@@ -37,4 +37,8 @@ public class PaymentAccount extends ExpressEntity {
     public String billingState;
     @JacksonXmlProperty(localName = "BillingZipcode")
     public String billingZipcode;
+    @JacksonXmlProperty(localName = "PASSUpdaterBatchStatus")
+    public PASSUpdaterBatchStatus updaterBatchStatus;
+    @JacksonXmlProperty(localName = "PASSUpdaterStatus")
+    public PASSUpdaterStatus updaterResultStatus;
 }

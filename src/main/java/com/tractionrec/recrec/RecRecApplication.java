@@ -21,6 +21,7 @@ public class RecRecApplication {
         RecRecStart startForm = new RecRecStart(state, stack);
         stack.setInitialForm(startForm);
         stack.displayInitial();
+        System.setProperty("jdk.httpclient.connectionPoolSize", "10");
     }
 
     public static boolean isDevEnv() {

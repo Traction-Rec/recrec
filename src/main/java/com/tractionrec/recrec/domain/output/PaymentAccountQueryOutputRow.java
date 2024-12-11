@@ -8,7 +8,7 @@ import com.tractionrec.recrec.domain.result.QueryResult;
         "merchant", "id", "status", "message", "recordId", "paymentAccountId", "paymentAccountType",
         "amount", "billingName", "billingEmail", "billingAddress1", "billingCity", "billingState", "billingZip",
         "cardNumber", "truncatedAccountNumber", "truncatedRoutingNumber", "cardLogo",
-        "expirationMonth", "expirationYear"
+        "expirationMonth", "expirationYear", "updaterBatchStatus", "updaterResultStatus"
 })
 public class PaymentAccountQueryOutputRow extends OutputRow {
     public String recordId;
@@ -27,6 +27,8 @@ public class PaymentAccountQueryOutputRow extends OutputRow {
     public String cardLogo;
     public String expirationMonth;
     public String expirationYear;
+    public String updaterBatchStatus;
+    public String updaterResultStatus;
 
     public PaymentAccountQueryOutputRow(QueryResult<PaymentAccount, PaymentAccountQueryOutputRow> result) {
         super(result);
@@ -49,6 +51,8 @@ public class PaymentAccountQueryOutputRow extends OutputRow {
         this.cardLogo = entity.paymentBrand;
         this.expirationMonth = entity.expiryMonth;
         this.expirationYear = entity.expiryYear;
+        this.updaterBatchStatus = entity.updaterBatchStatus.name();
+        this.updaterResultStatus = entity.updaterResultStatus.name();
     }
 
 }

@@ -55,6 +55,8 @@ public class PaymentAccountQueryService extends QueryService {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 return new PaymentAccountQueryResult(item, ResultStatus.ERROR, ex.getMessage());
+            } finally {
+                client.close();
             }
         }
     }

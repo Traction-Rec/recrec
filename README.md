@@ -1,6 +1,6 @@
 # Recrec
 
-Reconcile transactions from your local system with Vantiv.
+Reconcile transactions between Vantiv and an integrator like Traction Rec.
 
 ## Build
 

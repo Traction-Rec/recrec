@@ -73,7 +73,12 @@ runtime {
             "java.xml",
             "jdk.crypto.ec"
     )
-    targetPlatform("mac") {
+    targetPlatform("mac-aarch64") {
+        setJdkHome(
+                jdkDownload("https://corretto.aws/downloads/latest/amazon-corretto-21-aarch64-macos-jdk.tar.gz")
+        )
+    }
+    targetPlatform("mac-x64") {
         setJdkHome(
                 jdkDownload("https://corretto.aws/downloads/latest/amazon-corretto-21-x64-macos-jdk.tar.gz")
         )

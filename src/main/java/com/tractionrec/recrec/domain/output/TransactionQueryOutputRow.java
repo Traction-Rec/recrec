@@ -12,7 +12,7 @@ import java.time.format.DateTimeFormatter;
         "retrievalReferenceNumber", "systemTraceAuditNumber", "trackingId", "ticketNumber", "terminalId", "setupId",
         "transactionStatus", "amount", "approvalNumber", "billingName", "billingAddress1", "billingCity", "billingState", "billingZip",
         "billingEmail", "cardNumber", "cardType", "cardLogo",
-        "expirationMonth", "expirationYear", "transactionDate", "transactionType", "multipleResults"
+        "expirationMonth", "expirationYear", "transactionDate", "transactionType", "terminalData", "multipleResults"
 })
 public class TransactionQueryOutputRow extends OutputRow {
     // Always available
@@ -45,6 +45,7 @@ public class TransactionQueryOutputRow extends OutputRow {
     public String expirationYear;
     public String transactionDate;
     public String transactionType;
+    public String terminalData;
 
     public TransactionQueryOutputRow(QueryResult<Transaction, TransactionQueryOutputRow> result) {
         super(result);
@@ -80,6 +81,7 @@ public class TransactionQueryOutputRow extends OutputRow {
         this.expirationYear = tx.expirationYear;
         this.transactionDate = LocalDateTime.of(tx.transactionDate, tx.transactionTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         this.transactionType = tx.transactionType;
+        this.terminalData = tx.terminalData;
     }
 
 }

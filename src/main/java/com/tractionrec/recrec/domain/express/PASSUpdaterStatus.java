@@ -15,5 +15,10 @@ public enum PASSUpdaterStatus {
     NotAllowed,
     Error,
     PASSUpdaterDisabled,
-    NotUpdated
+    NotUpdated,
+    IssuerCorrected,
+    Fraud,
+    Inactivity,
+    MerchantBlocked,
+    InactiveSeller
 }

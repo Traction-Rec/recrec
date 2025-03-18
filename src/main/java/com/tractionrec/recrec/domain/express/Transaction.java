@@ -61,4 +61,6 @@ public class Transaction extends ExpressEntity {
     public String approvalNumber;
     @JacksonXmlProperty(localName = "TransactionType")
     public String transactionType;
+    @JacksonXmlProperty(localName = "TerminalData")
+    public String terminalData;
 }

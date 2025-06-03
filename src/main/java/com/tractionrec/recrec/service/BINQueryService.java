@@ -10,9 +10,9 @@ import gg.jte.TemplateOutput;
 import gg.jte.output.StringOutput;
 
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,16 +24,16 @@ public class BINQueryService extends QueryService {
     }
 
     public BINQueryResult queryForBINInfo(String accountId, String accountToken, QueryItem item) {
-        HttpClient client = HttpClient.newHttpClient();
         String requestBody = getBINBody(accountId, accountToken, item);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(getTransactionURI())
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .header("SOAPAction", "https://transaction.elementexpress.com/EnhancedBINQuery")
                 .header("Content-Type", "text/xml")
+                .timeout(Duration.ofSeconds(60)) // Request timeout
                 .build();
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = executeRequestWithRetry(request);
             if(response.statusCode() != 200) {
                 return new BINQueryResult(item, ResultStatus.ERROR, "Status Code: " + response.statusCode());
             }

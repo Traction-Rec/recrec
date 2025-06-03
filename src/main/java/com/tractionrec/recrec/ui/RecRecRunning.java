@@ -6,6 +6,7 @@ import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.tractionrec.recrec.RecRecState;
 import com.tractionrec.recrec.domain.QueryItem;
 import com.tractionrec.recrec.domain.QueryTargetVisitor;
+import com.tractionrec.recrec.domain.ResultStatus;
 import com.tractionrec.recrec.domain.output.BINQueryOutputRow;
 import com.tractionrec.recrec.domain.output.PaymentAccountQueryOutputRow;
 import com.tractionrec.recrec.domain.output.TransactionQueryOutputRow;
@@ -13,6 +14,7 @@ import com.tractionrec.recrec.domain.result.BINQueryResult;
 import com.tractionrec.recrec.domain.result.PaymentAccountQueryResult;
 import com.tractionrec.recrec.domain.result.QueryResult;
 import com.tractionrec.recrec.domain.result.TransactionQueryResult;
+import com.tractionrec.recrec.service.AdaptiveRateLimiter;
 import com.tractionrec.recrec.service.BINQueryService;
 import com.tractionrec.recrec.service.PaymentAccountQueryService;
 import com.tractionrec.recrec.service.TransactionQueryService;
@@ -43,8 +45,11 @@ public class RecRecRunning extends RecRecForm {
     private JButton nextButton;
     private List<Future<QueryResult>> futureResults;
 
+    private static final int INITIAL_CONCURRENT_REQUESTS = 20;
+    private static final int MIN_CONCURRENT_REQUESTS = 5;
     private static final int MAX_CONCURRENT_REQUESTS = 50;
-    private final Semaphore requestSemaphore = new Semaphore(MAX_CONCURRENT_REQUESTS, false);
+    private final AdaptiveRateLimiter rateLimiter = new AdaptiveRateLimiter(
+            INITIAL_CONCURRENT_REQUESTS, MIN_CONCURRENT_REQUESTS, MAX_CONCURRENT_REQUESTS);
 
     public RecRecRunning(RecRecState state, NavigationAction navAction) {
         super(state, navAction);
@@ -98,7 +103,15 @@ public class RecRecRunning extends RecRecForm {
                     }
                 });
             }
-            txtProgress.setText(String.format("<html><p>Total: %d</p><p>Pending: %d</p><p>Error: %d</p><p>Not Found: %d</p><p>Success: %d</p></html>", totalCount.get(), pendingCount.get(), errorCount.get(), notFoundCount.get(), successCount.get()));
+            // Only show rate limiter info in dev mode
+            if (isDevEnv()) {
+                String rateLimiterStatus = rateLimiter.getStats();
+                txtProgress.setText(String.format("<html><p>Total: %d</p><p>Pending: %d</p><p>Error: %d</p><p>Not Found: %d</p><p>Success: %d</p><p><b>%s</b></p></html>",
+                    totalCount.get(), pendingCount.get(), errorCount.get(), notFoundCount.get(), successCount.get(), rateLimiterStatus));
+            } else {
+                txtProgress.setText(String.format("<html><p>Total: %d</p><p>Pending: %d</p><p>Error: %d</p><p>Not Found: %d</p><p>Success: %d</p></html>",
+                    totalCount.get(), pendingCount.get(), errorCount.get(), notFoundCount.get(), successCount.get()));
+            }
         }, 1, 1, TimeUnit.SECONDS);
     }
 
@@ -127,54 +140,84 @@ public class RecRecRunning extends RecRecForm {
             @Override
             public TransactionQueryResult visitTransactionQuery() {
                 try {
-                    requestSemaphore.acquire();
+                    rateLimiter.acquire();
                     TransactionQueryResult r = buildTransactionQueryService().queryForTransaction(
                             state.accountId,
                             state.accountToken,
                             item
                     );
+
+                    // Record success/failure for adaptive rate limiting
+                    // Only record failure for ERROR status, NOT_FOUND is acceptable
+                    if (r != null && (r.getStatus() == ResultStatus.SUCCESS || r.getStatus() == ResultStatus.NOT_FOUND)) {
+                        rateLimiter.recordSuccess();
+                    } else {
+                        rateLimiter.recordFailure();
+                    }
+
                     return r;
                 } catch (Exception e) {
+                    rateLimiter.recordFailure();
                     e.printStackTrace();
-                    return null;
+                    return new TransactionQueryResult(item, ResultStatus.ERROR, "Request failed: " + e.getMessage());
                 } finally {
-                    requestSemaphore.release();
+                    rateLimiter.release();
                 }
             }
 
             @Override
             public PaymentAccountQueryResult visitPaymentAccountQuery() {
                 try {
-                    requestSemaphore.acquire();
+                    rateLimiter.acquire();
                     PaymentAccountQueryResult r = buildPaymentAccountQueryService().queryForPaymentAccount(
                             state.accountId,
                             state.accountToken,
                             item
                     );
+
+                    // Record success/failure for adaptive rate limiting
+                    // Only record failure for ERROR status, NOT_FOUND is acceptable
+                    if (r != null && (r.getStatus() == ResultStatus.SUCCESS || r.getStatus() == ResultStatus.NOT_FOUND)) {
+                        rateLimiter.recordSuccess();
+                    } else {
+                        rateLimiter.recordFailure();
+                    }
+
                     return r;
                 } catch (Exception e) {
+                    rateLimiter.recordFailure();
                     e.printStackTrace();
-                    return null;
+                    return new PaymentAccountQueryResult(item, ResultStatus.ERROR, "Request failed: " + e.getMessage());
                 } finally {
-                    requestSemaphore.release();
+                    rateLimiter.release();
                 }
             }
 
             @Override
             public BINQueryResult visitBINQuery() {
                 try {
-                    requestSemaphore.acquire();
+                    rateLimiter.acquire();
                     BINQueryResult r = buildBINQueryService().queryForBINInfo(
                             state.accountId,
                             state.accountToken,
                             item
                     );
+
+                    // Record success/failure for adaptive rate limiting
+                    // Only record failure for ERROR status, NOT_FOUND is acceptable
+                    if (r != null && (r.getStatus() == ResultStatus.SUCCESS || r.getStatus() == ResultStatus.NOT_FOUND)) {
+                        rateLimiter.recordSuccess();
+                    } else {
+                        rateLimiter.recordFailure();
+                    }
+
                     return r;
                 } catch (Exception e) {
+                    rateLimiter.recordFailure();
                     e.printStackTrace();
-                    return null;
+                    return new BINQueryResult(item, ResultStatus.ERROR, "Request failed: " + e.getMessage());
                 } finally {
-                    requestSemaphore.release();
+                    rateLimiter.release();
                 }
             }
         });

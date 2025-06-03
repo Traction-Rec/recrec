@@ -12,9 +12,9 @@ import gg.jte.output.StringOutput;
 import org.apache.commons.text.StringEscapeUtils;
 
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -25,16 +25,16 @@ public class TransactionQueryService extends QueryService {
     }
 
     public TransactionQueryResult queryForTransaction(String accountId, String accountToken, QueryItem item) {
-        HttpClient client = HttpClient.newHttpClient();
         String requestBody = getTxBody(accountId, accountToken, item);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(getReportingUri())
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .header("SOAPAction", "https://reporting.elementexpress.com/TransactionQuery")
                 .header("Content-Type", "text/xml")
+                .timeout(Duration.ofSeconds(60)) // Request timeout
                 .build();
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = executeRequestWithRetry(request);
             if(response.statusCode() != 200) {
                 return new TransactionQueryResult(item, ResultStatus.ERROR, "Status Code: " + response.statusCode());
             }

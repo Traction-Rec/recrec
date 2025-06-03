@@ -39,11 +39,15 @@ public abstract class QueryService {
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
         // Configure shared HttpClient with connection pooling and timeouts
+        // Use HTTP/1.1 to avoid HTTP/2 GOAWAY issues with high concurrency
         this.httpClient = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_2) // Prefer HTTP/2 for better performance
+                .version(HttpClient.Version.HTTP_1_1) // Use HTTP/1.1 for better connection stability
                 .connectTimeout(Duration.ofSeconds(30)) // Connection timeout
                 .followRedirects(HttpClient.Redirect.NORMAL) // Handle redirects
                 .build();
+
+        // Apply Windows-specific connection optimizations
+        configureForWindows();
 
         // Pre-resolve DNS for known endpoints to avoid resolution delays
         preResolveDNS();
@@ -73,14 +77,64 @@ public abstract class QueryService {
     }
 
     /**
-     * Execute HTTP request with retry logic for handling rate limiting and timeouts
+     * Execute HTTP request with retry logic for handling rate limiting and timeouts.
+     * Uses enhanced retry logic that can handle Windows connection exhaustion.
      */
     protected HttpResponse<String> executeRequestWithRetry(HttpRequest request) throws Exception {
         Callable<HttpResponse<String>> requestOperation = () -> {
             return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         };
 
-        return RetryUtil.retryWithBackoff(requestOperation);
+        try {
+            return RetryUtil.retryWithBackoff(requestOperation);
+        } catch (Exception e) {
+            // If we get connection exhaustion errors, try with longer delays
+            if (isConnectionExhaustion(e)) {
+                System.err.println("Detected connection exhaustion, retrying with longer delays: " + e.getMessage());
+                return RetryUtil.retryWithBackoffForConnectionExhaustion(requestOperation);
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Check if an exception indicates connection exhaustion (port exhaustion)
+     */
+    private boolean isConnectionExhaustion(Exception e) {
+        if (e.getCause() != null) {
+            String message = e.getCause().getMessage();
+            if (message != null) {
+                message = message.toLowerCase();
+                return message.contains("address already in use") ||
+                       message.contains("getsockopt") ||
+                       message.contains("bind");
+            }
+        }
+
+        if (e.getMessage() != null) {
+            String message = e.getMessage().toLowerCase();
+            return message.contains("address already in use") ||
+                   message.contains("getsockopt") ||
+                   message.contains("bind");
+        }
+
+        return false;
+    }
+
+    /**
+     * Configure Windows-specific connection optimizations
+     */
+    private void configureForWindows() {
+        String osName = System.getProperty("os.name", "").toLowerCase();
+        if (osName.contains("windows")) {
+            // Configure connection pool settings for Windows
+            System.setProperty("jdk.httpclient.keepalive.timeout", "30");
+
+            // Optimize for Windows connection handling
+            System.setProperty("sun.net.useExclusiveBind", "false");
+
+            System.out.println("Applied Windows-specific HTTP connection optimizations");
+        }
     }
 
 }

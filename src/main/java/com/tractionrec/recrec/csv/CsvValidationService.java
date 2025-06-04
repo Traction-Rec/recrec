@@ -179,11 +179,9 @@ public class CsvValidationService {
             String[] headers = null;
 
             // Get headers
-            Map<String, Integer> headerMap = parser.getHeaderMap();
-            if (headerMap != null && !headerMap.isEmpty()) {
-                String[] finalHeaders = new String[headerMap.size()];
-                headerMap.forEach((name, index) -> finalHeaders[index] = name);
-                headers = finalHeaders;
+            List<String> headerNames = parser.getHeaderNames();
+            if (headerNames != null && !headerNames.isEmpty()) {
+                headers = headerNames.toArray(new String[0]);
             }
 
             // Parse data rows

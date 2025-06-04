@@ -31,7 +31,10 @@ public class RecFormStack implements NavigationAction {
         form.willDisplay();
         applicationFrame.setContentPane(form.getRootComponent());
         applicationFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        applicationFrame.setPreferredSize(new Dimension(350, 250));
+
+        // Use form's preferred window size
+        Dimension preferredSize = form.getPreferredWindowSize();
+        applicationFrame.setPreferredSize(preferredSize);
         applicationFrame.setResizable(false);
         applicationFrame.pack();
         applicationFrame.setVisible(true);

@@ -3,6 +3,7 @@ package com.tractionrec.recrec.ui;
 import com.tractionrec.recrec.RecRecState;
 
 import javax.swing.*;
+import java.awt.*;
 
 public abstract class RecRecForm {
 
@@ -48,6 +49,14 @@ public abstract class RecRecForm {
 
     void willHide() {
         // NO-OP
+    }
+
+    /**
+     * Get the preferred window size for this form.
+     * Default is 350x250, but forms can override this.
+     */
+    Dimension getPreferredWindowSize() {
+        return new Dimension(350, 250);
     }
 
 }

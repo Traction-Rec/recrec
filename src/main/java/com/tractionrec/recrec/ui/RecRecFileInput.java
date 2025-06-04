@@ -43,7 +43,7 @@ public class RecRecFileInput extends RecRecForm {
 
     @Override
     public RecRecForm whatIsNext() {
-        return new RecRecRunning(state, navigationAction);
+        return new RecRecCsvValidation(state, navigationAction);
     }
 
     private boolean isUserFinished() {

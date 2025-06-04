@@ -210,6 +210,18 @@ public class RecRecCsvValidation extends RecRecForm {
         return new Dimension(700, 500);
     }
 
+    @Override
+    boolean requiresExtraSpace() {
+        // This form has dynamic content (issues list) that may need more space
+        return true;
+    }
+
+    @Override
+    Dimension getMinimumWindowSize() {
+        // CSV validation needs a larger minimum size due to its complexity
+        return new Dimension(600, 400);
+    }
+
     private void performValidation() {
         if (state.inputFile == null) {
             return;

@@ -73,16 +73,27 @@ public class RecRecFileInput extends RecRecForm {
         chooseFileButton.setText("Choose file...");
         rootPanel.add(chooseFileButton);
 
-        JPanel navigationPanel = new JPanel();
+        JPanel navigationPanel = new JPanel(new BorderLayout());
         navigationPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        navigationPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+
+        // Create button panel for right alignment
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+        buttonPanel.add(Box.createHorizontalGlue()); // Push buttons to the right
+
         backButton = new JButton();
         backButton.setText("< Back");
-        navigationPanel.add(backButton);
+        buttonPanel.add(backButton);
+
+        // Add spacing between buttons
+        buttonPanel.add(Box.createHorizontalStrut(5));
+
         nextButton = new JButton();
         nextButton.setEnabled(false);
         nextButton.setText("Next >");
-        navigationPanel.add(nextButton);
+        buttonPanel.add(nextButton);
+
+        navigationPanel.add(buttonPanel, BorderLayout.CENTER);
         rootPanel.add(navigationPanel);
     }
 

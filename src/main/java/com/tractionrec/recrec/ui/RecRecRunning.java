@@ -275,13 +275,20 @@ public class RecRecRunning extends RecRecForm {
         txtProgress.setText("Running....");
         rootPanel.add(txtProgress);
 
-        JPanel navigationPanel = new JPanel();
+        JPanel navigationPanel = new JPanel(new BorderLayout());
         navigationPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        navigationPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+
+        // Create button panel for right alignment
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+        buttonPanel.add(Box.createHorizontalGlue()); // Push button to the right
+
         nextButton = new JButton();
         nextButton.setText("Next >");
         nextButton.setEnabled(false); // Initially disabled until all requests complete
-        navigationPanel.add(nextButton);
+        buttonPanel.add(nextButton);
+
+        navigationPanel.add(buttonPanel, BorderLayout.CENTER);
         rootPanel.add(navigationPanel);
     }
 

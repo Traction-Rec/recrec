@@ -157,13 +157,20 @@ public class RecRecStart extends RecRecForm {
         buttonGroup.add(queryBINButton);
         rootPanel.add(buttonGroupPanel);
 
-        JPanel navigationPanel = new JPanel();
+        JPanel navigationPanel = new JPanel(new BorderLayout());
         navigationPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        navigationPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+
+        // Create button panel for right alignment
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+        buttonPanel.add(Box.createHorizontalGlue()); // Push button to the right
+
         nextButton = new JButton();
         nextButton.setEnabled(false);
         nextButton.setText("Next >");
-        navigationPanel.add(nextButton);
+        buttonPanel.add(nextButton);
+
+        navigationPanel.add(buttonPanel, BorderLayout.CENTER);
         rootPanel.add(navigationPanel);
     }
 

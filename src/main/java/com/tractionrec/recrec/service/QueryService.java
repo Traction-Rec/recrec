@@ -78,7 +78,7 @@ public abstract class QueryService {
 
     /**
      * Execute HTTP request with retry logic for handling rate limiting and timeouts.
-     * Uses enhanced retry logic that can handle Windows connection exhaustion.
+     * Uses enhanced retry logic that can handle Windows connection exhaustion and HTTP status codes.
      */
     protected HttpResponse<String> executeRequestWithRetry(HttpRequest request) throws Exception {
         Callable<HttpResponse<String>> requestOperation = () -> {
@@ -86,12 +86,12 @@ public abstract class QueryService {
         };
 
         try {
-            return RetryUtil.retryWithBackoff(requestOperation);
+            return RetryUtil.retryHttpRequestWithBackoff(requestOperation);
         } catch (Exception e) {
             // If we get connection exhaustion errors, try with longer delays
             if (isConnectionExhaustion(e)) {
                 System.err.println("Detected connection exhaustion, retrying with longer delays: " + e.getMessage());
-                return RetryUtil.retryWithBackoffForConnectionExhaustion(requestOperation);
+                return RetryUtil.retryHttpRequestWithBackoff(requestOperation, 5, Duration.ofSeconds(5), Duration.ofSeconds(60));
             }
             throw e;
         }

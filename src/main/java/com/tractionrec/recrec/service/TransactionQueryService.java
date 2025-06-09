@@ -17,6 +17,7 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -99,12 +100,11 @@ public class TransactionQueryService extends QueryService {
 
     private String getTxBody(String accountId, String accountToken, QueryItem item, AdhocQueryItem adhocItem) {
         TemplateOutput output = new StringOutput();
-        Map<String, Object> templateParams = Map.of(
-                "accountId", accountId,
-                "accountToken", accountToken,
-                "queryItem", item,
-                "adhocQueryItem", adhocItem
-        );
+        Map<String, Object> templateParams = new HashMap<>();
+        templateParams.put("accountId", accountId);
+        templateParams.put("accountToken", accountToken);
+        templateParams.put("queryItem", item);
+        templateParams.put("adhocQueryItem", adhocItem); // This can be null for CSV queries
         templateEngine.render("transactionQueryPOSTBody.jte", templateParams, output);
         return output.toString();
     }

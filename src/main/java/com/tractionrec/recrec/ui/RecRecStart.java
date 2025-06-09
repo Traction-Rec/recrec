@@ -25,15 +25,15 @@ public class RecRecStart extends RecRecForm {
         super(state, navAction);
         inpAccountId.addKeyListener(new KeyAdapter() {
             @Override
-            public void keyTyped(KeyEvent e) {
-                super.keyTyped(e);
+            public void keyReleased(KeyEvent e) {
+                super.keyReleased(e);
                 updateNextEnabled();
             }
         });
         inpAccountToken.addKeyListener(new KeyAdapter() {
             @Override
-            public void keyTyped(KeyEvent e) {
-                super.keyTyped(e);
+            public void keyReleased(KeyEvent e) {
+                super.keyReleased(e);
                 updateNextEnabled();
             }
         });

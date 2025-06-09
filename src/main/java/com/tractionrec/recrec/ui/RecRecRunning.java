@@ -1,15 +1,9 @@
 package com.tractionrec.recrec.ui;
 
-import com.fasterxml.jackson.databind.SequenceWriter;
-import com.fasterxml.jackson.dataformat.csv.CsvMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.tractionrec.recrec.RecRecState;
 import com.tractionrec.recrec.domain.QueryItem;
 import com.tractionrec.recrec.domain.QueryTargetVisitor;
 import com.tractionrec.recrec.domain.ResultStatus;
-import com.tractionrec.recrec.domain.output.BINQueryOutputRow;
-import com.tractionrec.recrec.domain.output.PaymentAccountQueryOutputRow;
-import com.tractionrec.recrec.domain.output.TransactionQueryOutputRow;
 import com.tractionrec.recrec.domain.result.BINQueryResult;
 import com.tractionrec.recrec.domain.result.PaymentAccountQueryResult;
 import com.tractionrec.recrec.domain.result.QueryResult;
@@ -26,11 +20,11 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
-import java.io.File;
-import java.io.FileWriter;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -72,26 +66,25 @@ public class RecRecRunning extends RecRecForm {
 
     private void setupEventHandlers() {
         nextButton.addActionListener(e -> {
-            JFileChooser outputChooser = new JFileChooser();
-            int result = outputChooser.showDialog(rootPanel, "Save results");
-            if (result == JFileChooser.APPROVE_OPTION) {
-                File outputFile = outputChooser.getSelectedFile();
-                try (FileWriter fileWriter = new FileWriter(outputFile)) {
-                    CsvMapper mapper = new CsvMapper();
-                    CsvSchema schema = getResultSchema(mapper);
-                    SequenceWriter sequenceWriter = mapper.writer(schema)
-                            .writeValues(fileWriter);
-                    for (Future<QueryResult> f : futureResults) {
-                        if(f.get() != null) {
-                            List<?> rows = f.get().getOutputRows();
-                            sequenceWriter.writeAll(rows);
-                        }
+            // Store results in state for the results preview
+            try {
+                List<QueryResult<?, ?>> completedResults = new ArrayList<>();
+                for (Future<QueryResult> f : futureResults) {
+                    if (f.get() != null) {
+                        completedResults.add(f.get());
                     }
-                } catch (ExecutionException | InterruptedException | IOException ex) {
-                    ex.printStackTrace();
                 }
-                state.reset();
+                state.queryResults = completedResults;
+
+                // Navigate to results preview instead of direct save
                 navigationAction.onNext();
+
+            } catch (ExecutionException | InterruptedException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(rootPanel,
+                    "Error retrieving results: " + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
             }
         });
         timeExecutorService.scheduleAtFixedRate(() -> {
@@ -183,6 +176,11 @@ public class RecRecRunning extends RecRecForm {
         return rootPanel;
     }
 
+    @Override
+    public RecRecForm whatIsNext() {
+        return new RecRecResultsPreview(state, navigationAction);
+    }
+
     public void willDisplay() {
         try {
             this.futureResults = Files.lines(state.inputFile.toPath()).skip(1)
@@ -228,7 +226,8 @@ public class RecRecRunning extends RecRecForm {
                 } catch (Exception e) {
                     rateLimiter.recordFailure();
                     e.printStackTrace();
-                    return new TransactionQueryResult(item, ResultStatus.ERROR, "Request failed: " + e.getMessage());
+                    String errorMsg = "Request failed: " + (e.getMessage() != null ? e.getMessage() : "Unknown error - " + e.getClass().getSimpleName());
+                    return new TransactionQueryResult(item, ResultStatus.ERROR, errorMsg);
                 } finally {
                     rateLimiter.release();
                 }
@@ -256,7 +255,8 @@ public class RecRecRunning extends RecRecForm {
                 } catch (Exception e) {
                     rateLimiter.recordFailure();
                     e.printStackTrace();
-                    return new PaymentAccountQueryResult(item, ResultStatus.ERROR, "Request failed: " + e.getMessage());
+                    String errorMsg = "Request failed: " + (e.getMessage() != null ? e.getMessage() : "Unknown error - " + e.getClass().getSimpleName());
+                    return new PaymentAccountQueryResult(item, ResultStatus.ERROR, errorMsg);
                 } finally {
                     rateLimiter.release();
                 }
@@ -284,32 +284,11 @@ public class RecRecRunning extends RecRecForm {
                 } catch (Exception e) {
                     rateLimiter.recordFailure();
                     e.printStackTrace();
-                    return new BINQueryResult(item, ResultStatus.ERROR, "Request failed: " + e.getMessage());
+                    String errorMsg = "Request failed: " + (e.getMessage() != null ? e.getMessage() : "Unknown error - " + e.getClass().getSimpleName());
+                    return new BINQueryResult(item, ResultStatus.ERROR, errorMsg);
                 } finally {
                     rateLimiter.release();
                 }
-            }
-        });
-    }
-
-    private CsvSchema getResultSchema(CsvMapper mapper) {
-        return state.queryMode.accept(new QueryTargetVisitor<CsvSchema>() {
-            @Override
-            public CsvSchema visitTransactionQuery() {
-                return mapper.schemaFor(TransactionQueryOutputRow.class)
-                        .withHeader();
-            }
-
-            @Override
-            public CsvSchema visitPaymentAccountQuery() {
-                return mapper.schemaFor(PaymentAccountQueryOutputRow.class)
-                        .withHeader();
-            }
-
-            @Override
-            public CsvSchema visitBINQuery() {
-                return mapper.schemaFor(BINQueryOutputRow.class)
-                        .withHeader();
             }
         });
     }

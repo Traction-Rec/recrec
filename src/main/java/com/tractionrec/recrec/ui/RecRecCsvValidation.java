@@ -48,127 +48,188 @@ public class RecRecCsvValidation extends RecRecForm {
     }
 
     protected void setupUI() {
-        rootPanel = new JPanel(new BorderLayout());
-        rootPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        rootPanel = new JPanel();
+        rootPanel.setLayout(new BoxLayout(rootPanel, BoxLayout.Y_AXIS));
+        rootPanel.setBorder(BorderFactory.createEmptyBorder(
+            StyleUtils.SPACING_XXLARGE,
+            StyleUtils.SPACING_XXLARGE,
+            StyleUtils.SPACING_XXLARGE,
+            StyleUtils.SPACING_XXLARGE
+        ));
+        rootPanel.setBackground(Color.WHITE);
 
-        // Top panel with status and controls
-        JPanel topPanel = createTopPanel();
-        rootPanel.add(topPanel, BorderLayout.NORTH);
+        // Form Title
+        JLabel titleLabel = StyleUtils.createFormTitle("CSV Validation");
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(titleLabel);
 
-        // Center panel with issues list
-        JPanel centerPanel = createCenterPanel();
-        rootPanel.add(centerPanel, BorderLayout.CENTER);
+        JLabel subtitleLabel = new JLabel("Review and fix any issues found in your CSV file");
+        subtitleLabel.setFont(TypographyConstants.FONT_SMALL);
+        subtitleLabel.setForeground(TractionRecTheme.TEXT_SECONDARY);
+        subtitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(subtitleLabel);
+        StyleUtils.addVerticalSpacing(rootPanel, StyleUtils.SPACING_XLARGE);
 
-        // Bottom panel with navigation
-        JPanel bottomPanel = createBottomPanel();
-        rootPanel.add(bottomPanel, BorderLayout.SOUTH);
+        // Status Section
+        JPanel statusSection = createStatusSection();
+        statusSection.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(statusSection);
+        StyleUtils.addVerticalSpacing(rootPanel, StyleUtils.SPACING_LARGE);
+
+        // Controls Section
+        JPanel controlsSection = createControlsSection();
+        controlsSection.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(controlsSection);
+        StyleUtils.addVerticalSpacing(rootPanel, StyleUtils.SPACING_LARGE);
+
+        // Issues Section
+        JPanel issuesSection = createIssuesSection();
+        issuesSection.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(issuesSection);
+        StyleUtils.addVerticalSpacing(rootPanel, StyleUtils.SPACING_XLARGE);
+
+        // Navigation Section
+        JPanel navigationSection = createNavigationSection();
+        navigationSection.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(navigationSection);
     }
 
-    private JPanel createTopPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
+    private JPanel createStatusSection() {
+        JPanel section = StyleUtils.createCard();
+        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
 
-        // Status panel
-        JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Section title with icon
+        JLabel sectionTitle = StyleUtils.createSectionTitle(StyleUtils.Icons.INFO + "  Validation Status");
+        section.add(sectionTitle);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_MEDIUM);
+
+        // Status label
         statusLabel = new JLabel("Validating CSV file...");
-        statusLabel.setFont(statusLabel.getFont().deriveFont(Font.BOLD, 14f));
-        statusPanel.add(statusLabel);
+        statusLabel.setFont(TypographyConstants.FONT_BODY_BOLD);
+        statusLabel.setForeground(TractionRecTheme.PRIMARY_BLUE);
+        statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.add(statusLabel);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_SMALL);
 
         // Progress bar
         validationProgress = new JProgressBar();
         validationProgress.setIndeterminate(true);
         validationProgress.setVisible(false);
-        statusPanel.add(validationProgress);
+        validationProgress.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.add(validationProgress);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_MEDIUM);
 
-        panel.add(statusPanel, BorderLayout.NORTH);
-
-        // Stats panel
+        // Stats label
         statsLabel = new JLabel("File statistics will appear here");
-        statsLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 10, 0));
-        panel.add(statsLabel, BorderLayout.CENTER);
+        statsLabel.setFont(TypographyConstants.FONT_SMALL);
+        statsLabel.setForeground(TractionRecTheme.TEXT_SECONDARY);
+        statsLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.add(statsLabel);
 
-        // Controls panel
-        JPanel controlsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        return section;
+    }
 
-        validateButton = new JButton("Re-validate");
+    private JPanel createControlsSection() {
+        JPanel section = StyleUtils.createElevatedCard();
+        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
+
+        // Section title with icon
+        JLabel sectionTitle = StyleUtils.createSectionTitle(StyleUtils.Icons.SETTINGS + "  Actions");
+        section.add(sectionTitle);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_MEDIUM);
+
+        // First row of buttons
+        JPanel buttonRow1 = new JPanel();
+        buttonRow1.setLayout(new BoxLayout(buttonRow1, BoxLayout.X_AXIS));
+        buttonRow1.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        validateButton = StyleUtils.createIconButton("Re-validate", StyleUtils.Icons.REFRESH);
         validateButton.setEnabled(false);
-        controlsPanel.add(validateButton);
+        StyleUtils.styleButtonSecondary(validateButton);
+        buttonRow1.add(validateButton);
+        StyleUtils.addHorizontalSpacing(buttonRow1, StyleUtils.SPACING_MEDIUM);
 
-        fixButton = new JButton("Fix Issues Automatically");
+        fixButton = StyleUtils.createIconButton("Fix Issues", StyleUtils.Icons.SETTINGS);
         fixButton.setEnabled(false);
-        controlsPanel.add(fixButton);
+        StyleUtils.styleButtonSecondary(fixButton);
+        buttonRow1.add(fixButton);
+        buttonRow1.add(Box.createHorizontalGlue());
 
-        exportButton = new JButton("Export Clean CSV");
+        section.add(buttonRow1);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_MEDIUM);
+
+        // Second row of buttons
+        JPanel buttonRow2 = new JPanel();
+        buttonRow2.setLayout(new BoxLayout(buttonRow2, BoxLayout.X_AXIS));
+        buttonRow2.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        exportButton = StyleUtils.createIconButton("Export Clean CSV", StyleUtils.Icons.DOWNLOAD);
         exportButton.setEnabled(false);
         exportButton.addActionListener(e -> performExportClean());
-        controlsPanel.add(exportButton);
+        StyleUtils.styleButtonSecondary(exportButton);
+        buttonRow2.add(exportButton);
+        StyleUtils.addHorizontalSpacing(buttonRow2, StyleUtils.SPACING_MEDIUM);
 
-        previewButton = new JButton("Open Full Preview");
+        previewButton = StyleUtils.createIconButton("Open Full Preview", StyleUtils.Icons.SEARCH);
         previewButton.setEnabled(false);
         previewButton.addActionListener(e -> openFullPreview());
-        controlsPanel.add(previewButton);
+        StyleUtils.styleButtonPrimary(previewButton);
+        buttonRow2.add(previewButton);
+        buttonRow2.add(Box.createHorizontalGlue());
 
+        section.add(buttonRow2);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_MEDIUM);
+
+        // Checkbox
         ignoreWarningsCheckbox = new JCheckBox("Ignore warnings and proceed");
-        controlsPanel.add(ignoreWarningsCheckbox);
+        StyleUtils.styleCheckBox(ignoreWarningsCheckbox);
+        ignoreWarningsCheckbox.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.add(ignoreWarningsCheckbox);
 
-        panel.add(controlsPanel, BorderLayout.SOUTH);
-
-        return panel;
+        return section;
     }
 
-    private JPanel createCenterPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
+    private JPanel createIssuesSection() {
+        JPanel section = StyleUtils.createElevatedCard();
+        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
 
-        // Issues panel takes full center
-        JPanel issuesPanel = createIssuesPanel();
-        panel.add(issuesPanel, BorderLayout.CENTER);
+        // Section title with icon
+        JLabel sectionTitle = StyleUtils.createSectionTitle(StyleUtils.Icons.WARNING + "  Validation Issues");
+        section.add(sectionTitle);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_MEDIUM);
 
-        // Add preview info panel
-        JPanel previewInfoPanel = createPreviewInfoPanel();
-        panel.add(previewInfoPanel, BorderLayout.NORTH);
-
-        return panel;
-    }
-
-    private JPanel createPreviewInfoPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        JLabel infoLabel = new JLabel("Click 'Open Full Preview' to view CSV data in a spreadsheet-style window");
-        infoLabel.setForeground(Color.BLUE);
-        infoLabel.setFont(infoLabel.getFont().deriveFont(Font.ITALIC));
-        panel.add(infoLabel, BorderLayout.CENTER);
-
-        return panel;
-    }
-
-    private JPanel createIssuesPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(new TitledBorder("Validation Issues"));
+        // Info text
+        JLabel infoLabel = new JLabel("<html><div style='width: 500px;'><p style='color: #3B82F6; font-style: italic;'>Click 'Open Full Preview' to view CSV data in a spreadsheet-style window with issue highlighting.</p></div></html>");
+        infoLabel.setFont(TypographyConstants.FONT_SMALL);
+        infoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.add(infoLabel);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_MEDIUM);
 
         // Create issues list
         issueList = new JList<>();
         issueList.setCellRenderer(new ValidationIssueListRenderer());
         issueList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        issueList.setFont(TypographyConstants.FONT_SMALL);
 
         JScrollPane scrollPane = new JScrollPane(issueList);
-        scrollPane.setPreferredSize(new Dimension(600, 300)); // More width, less height
+        scrollPane.setPreferredSize(new Dimension(600, 200));
+        scrollPane.setBorder(StyleUtils.createInputBorder());
+        scrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        panel.add(scrollPane, BorderLayout.CENTER);
+        section.add(scrollPane);
 
-        return panel;
+        return section;
     }
 
-    private JPanel createBottomPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+    private JPanel createNavigationSection() {
+        backButton = StyleUtils.createIconButton("Back", StyleUtils.Icons.ARROW_LEFT);
+        StyleUtils.styleButtonSecondary(backButton);
 
-        backButton = new JButton("< Back");
-        panel.add(backButton);
-
-        nextButton = new JButton("Next >");
+        nextButton = StyleUtils.createIconButton("Continue", StyleUtils.Icons.ARROW_RIGHT);
         nextButton.setEnabled(false);
-        panel.add(nextButton);
+        StyleUtils.styleButtonPrimary(nextButton, true); // Use large button
 
-        return panel;
+        return StyleUtils.createNavigationPanel(backButton, nextButton);
     }
 
     private void setupEventHandlers() {
@@ -235,7 +296,8 @@ public class RecRecCsvValidation extends RecRecForm {
         // Perform validation in background
         CompletableFuture.supplyAsync(() -> {
             CsvValidationResult result = validationService.validateCsv(state.inputFile);
-            CsvPreviewData preview = validationService.generatePreview(state.inputFile, 100);
+            // Request more rows for paging support - up to 50k rows
+            CsvPreviewData preview = validationService.generatePreview(state.inputFile, 50000);
             return new ValidationData(result, preview);
         }).thenAccept(data -> {
             SwingUtilities.invokeLater(() -> {

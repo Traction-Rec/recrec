@@ -18,10 +18,12 @@ public class RecRecFileInput extends RecRecForm {
         nextButton.addActionListener(e -> navigationAction.onNext());
         chooseFileButton.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("CSV Files", "csv"));
             int resultCode = fileChooser.showDialog(rootPanel, "Select");
             if (resultCode == JFileChooser.APPROVE_OPTION) {
                 state.inputFile = fileChooser.getSelectedFile();
-                chooseFileButton.setText("Selected: " + state.inputFile.getName());
+                chooseFileButton.setText(StyleUtils.Icons.CHECK + "  Selected: " + state.inputFile.getName());
+                StyleUtils.styleButtonPrimary(chooseFileButton); // Change to primary style when file selected
                 updateNextEnabled();
             }
         });
@@ -30,7 +32,8 @@ public class RecRecFileInput extends RecRecForm {
     @Override
     public void willDisplay() {
         if (state.inputFile != null) {
-            chooseFileButton.setText("Selected: " + state.inputFile.getName());
+            chooseFileButton.setText(StyleUtils.Icons.CHECK + "  Selected: " + state.inputFile.getName());
+            StyleUtils.styleButtonPrimary(chooseFileButton); // Change to primary style when file selected
         }
         switch (state.queryMode) {
             case SETUP_ID -> lblQueryingBy.setText("You are querying by setup id.");
@@ -56,45 +59,93 @@ public class RecRecFileInput extends RecRecForm {
 
     protected void setupUI() {
         rootPanel = new JPanel();
-        rootPanel.setBorder( BorderFactory.createEmptyBorder(20,20,20,20) );
         rootPanel.setLayout(new BoxLayout(rootPanel, BoxLayout.Y_AXIS));
-        rootPanel.setAlignmentX( Component.LEFT_ALIGNMENT );
-        rootPanel.setAlignmentY( Component.TOP_ALIGNMENT );
+        rootPanel.setBorder(BorderFactory.createEmptyBorder(
+            StyleUtils.SPACING_XXLARGE,
+            StyleUtils.SPACING_XXLARGE,
+            StyleUtils.SPACING_XXLARGE,
+            StyleUtils.SPACING_XXLARGE
+        ));
+        rootPanel.setBackground(Color.WHITE);
+        rootPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        lblQueryingBy = new JLabel();
-        lblQueryingBy.setText("You are querying by...");
-        rootPanel.add(lblQueryingBy);
-        rootPanel.add(Box.createRigidArea(new Dimension(0, 20)));
-        final JLabel lblHelp = new JLabel();
-        lblHelp.setText("<html><p>Please choose a csv file where each row has two columns \"Merchant\" and \"Id\".</p></html>");
-        rootPanel.add(lblHelp);
-        rootPanel.add(Box.createRigidArea(new Dimension(0, 20)));
-        chooseFileButton = new JButton();
-        chooseFileButton.setText("Choose file...");
-        rootPanel.add(chooseFileButton);
+        // Form Title
+        JLabel titleLabel = StyleUtils.createFormTitle("Select Input File");
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(titleLabel);
+        StyleUtils.addVerticalSpacing(rootPanel, StyleUtils.SPACING_LARGE);
 
-        JPanel navigationPanel = new JPanel(new BorderLayout());
-        navigationPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // Query Type Info Section
+        JPanel queryInfoSection = createQueryInfoSection();
+        queryInfoSection.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(queryInfoSection);
+        StyleUtils.addVerticalSpacing(rootPanel, StyleUtils.SPACING_XLARGE);
 
-        // Create button panel for right alignment
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
-        buttonPanel.add(Box.createHorizontalGlue()); // Push buttons to the right
+        // File Selection Section
+        JPanel fileSelectionSection = createFileSelectionSection();
+        fileSelectionSection.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(fileSelectionSection);
+        StyleUtils.addVerticalSpacing(rootPanel, StyleUtils.SPACING_XXLARGE);
 
-        backButton = new JButton();
-        backButton.setText("< Back");
-        buttonPanel.add(backButton);
+        // Navigation Section
+        JPanel navigationSection = createNavigationSection();
+        navigationSection.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(navigationSection);
+    }
 
-        // Add spacing between buttons
-        buttonPanel.add(Box.createHorizontalStrut(5));
+    private JPanel createQueryInfoSection() {
+        JPanel section = StyleUtils.createCard();
+        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
 
-        nextButton = new JButton();
+        // Section title with icon
+        JLabel sectionTitle = StyleUtils.createSectionTitle(StyleUtils.Icons.INFO + "  Query Information");
+        section.add(sectionTitle);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_MEDIUM);
+
+        // Query type label
+        lblQueryingBy = new JLabel("You are querying by...");
+        lblQueryingBy.setFont(TypographyConstants.FONT_BODY_BOLD);
+        lblQueryingBy.setForeground(TractionRecTheme.PRIMARY_BLUE);
+        lblQueryingBy.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.add(lblQueryingBy);
+
+        return section;
+    }
+
+    private JPanel createFileSelectionSection() {
+        JPanel section = StyleUtils.createElevatedCard();
+        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
+
+        // Section title with icon
+        JLabel sectionTitle = StyleUtils.createSectionTitle(StyleUtils.Icons.FILE + "  CSV File Selection");
+        section.add(sectionTitle);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_MEDIUM);
+
+        // Help text
+        JLabel helpLabel = new JLabel("<html><div style='width: 400px;'><p>Please choose a CSV file where each row has two columns: <strong>\"Merchant\"</strong> and <strong>\"Id\"</strong>.</p><p style='margin-top: 8px; color: #6B7280; font-size: 12px;'>The first row should contain column headers, and subsequent rows should contain the data to query.</p></div></html>");
+        helpLabel.setFont(TypographyConstants.FONT_BODY);
+        helpLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.add(helpLabel);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_LARGE);
+
+        // File selection button
+        chooseFileButton = StyleUtils.createIconButton("Choose File", StyleUtils.Icons.FOLDER);
+        StyleUtils.styleButtonSecondary(chooseFileButton);
+        chooseFileButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.add(chooseFileButton);
+
+        return section;
+    }
+
+    private JPanel createNavigationSection() {
+        backButton = StyleUtils.createIconButton("Back", StyleUtils.Icons.ARROW_LEFT);
+        StyleUtils.styleButtonSecondary(backButton);
+
+        nextButton = StyleUtils.createIconButton("Next", StyleUtils.Icons.ARROW_RIGHT);
         nextButton.setEnabled(false);
-        nextButton.setText("Next >");
-        buttonPanel.add(nextButton);
+        StyleUtils.styleButtonPrimary(nextButton, true); // Use large button
 
-        navigationPanel.add(buttonPanel, BorderLayout.CENTER);
-        rootPanel.add(navigationPanel);
+        return StyleUtils.createNavigationPanel(backButton, nextButton);
     }
 
     @Override

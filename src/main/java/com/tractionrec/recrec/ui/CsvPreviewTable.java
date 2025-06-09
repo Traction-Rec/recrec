@@ -18,6 +18,7 @@ import java.awt.*;
 public class CsvPreviewTable extends JTable {
 
     private CsvPreviewData previewData;
+    private PagedCsvPreviewData pagedData;
     private CellLocation highlightedCell;
 
     public CsvPreviewTable() {
@@ -111,6 +112,37 @@ public class CsvPreviewTable extends JTable {
         repaint();
     }
 
+    public void setPagedPreviewData(PagedCsvPreviewData pagedData) {
+        this.pagedData = pagedData;
+        this.previewData = pagedData.getFullData();
+
+        // Set table model with paged data
+        setModel(new PagedCsvPreviewTableModel(pagedData));
+
+        // Set column headers
+        if (pagedData.getHeaders() != null) {
+            JTableHeader header = getTableHeader();
+            for (int i = 0; i < pagedData.getHeaders().length && i < getColumnCount(); i++) {
+                getColumnModel().getColumn(i).setHeaderValue(pagedData.getHeaders()[i]);
+            }
+            header.repaint();
+        }
+
+        // Set reasonable column widths
+        for (int i = 0; i < getColumnCount(); i++) {
+            getColumnModel().getColumn(i).setPreferredWidth(120);
+        }
+
+        repaint();
+    }
+
+    public void refreshPageData() {
+        if (getModel() instanceof PagedCsvPreviewTableModel) {
+            ((PagedCsvPreviewTableModel) getModel()).fireTableDataChanged();
+        }
+        repaint();
+    }
+
     public void highlightCell(CellLocation location) {
         this.highlightedCell = location;
 
@@ -167,6 +199,48 @@ public class CsvPreviewTable extends JTable {
     }
 
     /**
+     * Custom table model for paged CSV preview data
+     */
+    private static class PagedCsvPreviewTableModel extends AbstractTableModel {
+        private final PagedCsvPreviewData pagedData;
+
+        public PagedCsvPreviewTableModel(PagedCsvPreviewData pagedData) {
+            this.pagedData = pagedData;
+        }
+
+        @Override
+        public int getRowCount() {
+            return pagedData != null ? pagedData.getCurrentPageRowCount() : 0;
+        }
+
+        @Override
+        public int getColumnCount() {
+            return pagedData != null ? pagedData.getColumnCount() : 0;
+        }
+
+        @Override
+        public Object getValueAt(int rowIndex, int columnIndex) {
+            if (pagedData != null) {
+                return pagedData.getCellValue(rowIndex, columnIndex);
+            }
+            return "";
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            if (pagedData != null && pagedData.getHeaders() != null && column < pagedData.getHeaders().length) {
+                return pagedData.getHeaders()[column];
+            }
+            return "Column " + (column + 1);
+        }
+
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return false; // Preview is read-only
+        }
+    }
+
+    /**
      * Custom cell renderer for highlighting validation issues
      */
     private class CsvCellRenderer extends DefaultTableCellRenderer {
@@ -182,10 +256,31 @@ public class CsvPreviewTable extends JTable {
             Color backgroundColor = Color.WHITE;
             Color foregroundColor = Color.BLACK;
 
-            if (previewData != null) {
+            // Use paged data if available, otherwise fall back to preview data
+            if (pagedData != null) {
                 CellLocation location = new CellLocation(row, column);
 
-                // Check for validation issues
+                // Check for validation issues using paged data
+                if (pagedData.hasCellIssue(row, column)) {
+                    ValidationIssue issue = pagedData.getCellIssue(row, column);
+                    if (issue != null) {
+                        switch (issue.getSeverity()) {
+                            case ERROR:
+                                backgroundColor = new Color(255, 200, 200); // Light red
+                                break;
+                            case WARNING:
+                                backgroundColor = new Color(255, 255, 200); // Light yellow
+                                break;
+                            case INFO:
+                                backgroundColor = new Color(200, 220, 255); // Light blue
+                                break;
+                        }
+                    }
+                }
+            } else if (previewData != null) {
+                CellLocation location = new CellLocation(row, column);
+
+                // Check for validation issues using preview data
                 if (previewData.hasCellIssue(row, column)) {
                     ValidationIssue issue = previewData.getCellIssue(row, column);
                     if (issue != null) {
@@ -203,16 +298,17 @@ public class CsvPreviewTable extends JTable {
                     }
                 }
 
-                // Highlight selected cell
-                if (location.equals(highlightedCell)) {
-                    backgroundColor = new Color(100, 150, 255); // Blue highlight
-                    foregroundColor = Color.WHITE;
-                }
+            }
+
+            // Highlight selected cell (works for both paged and non-paged)
+            CellLocation currentLocation = new CellLocation(row, column);
+            if (currentLocation.equals(highlightedCell)) {
+                backgroundColor = new Color(100, 150, 255); // Blue highlight
+                foregroundColor = Color.WHITE;
             }
 
             // Apply selection highlighting
             if (isSelected) {
-                CellLocation currentLocation = new CellLocation(row, column);
                 if (!currentLocation.equals(highlightedCell)) {
                     backgroundColor = table.getSelectionBackground();
                     foregroundColor = table.getSelectionForeground();
@@ -223,7 +319,10 @@ public class CsvPreviewTable extends JTable {
             setForeground(foregroundColor);
 
             // Add tooltip for cells with issues
-            if (previewData != null && previewData.hasCellIssue(row, column)) {
+            if (pagedData != null && pagedData.hasCellIssue(row, column)) {
+                ValidationIssue issue = pagedData.getCellIssue(row, column);
+                setToolTipText(issue.getDescription() + " - " + issue.getSuggestedFix());
+            } else if (previewData != null && previewData.hasCellIssue(row, column)) {
                 ValidationIssue issue = previewData.getCellIssue(row, column);
                 setToolTipText(issue.getDescription() + " - " + issue.getSuggestedFix());
             } else {

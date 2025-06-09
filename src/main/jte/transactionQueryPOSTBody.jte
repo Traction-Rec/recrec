@@ -1,9 +1,11 @@
 @import com.tractionrec.recrec.domain.QueryBy
 @import com.tractionrec.recrec.domain.QueryItem
+@import com.tractionrec.recrec.domain.AdhocQueryItem
 
 @param String accountId
 @param String accountToken
 @param QueryItem queryItem
+@param AdhocQueryItem adhocQueryItem = null
 <?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope v="https://reporting.elementexpress.com" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
     <soap:Header/>
@@ -26,6 +28,20 @@
                     <ReferenceNumber>${queryItem.id()}</ReferenceNumber>
                 @elseif(queryItem.mode() == QueryBy.SETUP_ID)
                     <TransactionSetupID>${queryItem.id()}</TransactionSetupID>
+                @elseif(queryItem.mode() == QueryBy.ADHOC_SEARCH && adhocQueryItem != null)
+                    @if(adhocQueryItem.hasDateRange())
+                        <TransactionDateTimeBegin>${adhocQueryItem.getFormattedDateBegin()}</TransactionDateTimeBegin>
+                        <TransactionDateTimeEnd>${adhocQueryItem.getFormattedDateEnd()}</TransactionDateTimeEnd>
+                    @endif
+                    @if(adhocQueryItem.hasTransactionType())
+                        <TransactionType>${adhocQueryItem.transactionType()}</TransactionType>
+                    @endif
+                    @if(adhocQueryItem.hasTransactionAmount())
+                        <TransactionAmount>${adhocQueryItem.getFormattedAmount()}</TransactionAmount>
+                    @endif
+                    @if(adhocQueryItem.hasApprovalNumber())
+                        <ApprovalNumber>${adhocQueryItem.approvalNumber()}</ApprovalNumber>
+                    @endif
                 @endif
             </parameters>
             <arrayOfExtendedParameters/>

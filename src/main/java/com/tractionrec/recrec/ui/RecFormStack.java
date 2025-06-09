@@ -123,4 +123,9 @@ public class RecFormStack implements NavigationAction {
         }
     }
 
+    @Override
+    public void updateNextForm(RecRecForm nextForm) {
+        this.nextForm = nextForm;
+    }
+
 }

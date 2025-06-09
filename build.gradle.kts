@@ -32,6 +32,7 @@ dependencies {
     implementation("org.apache.commons:commons-io:1.3.2")
     implementation("com.ibm.icu:icu4j:74.2")
     implementation("com.jcabi:jcabi-manifests:1.1")
+    implementation("com.github.lgooddatepicker:LGoodDatePicker:11.2.1")
 }
 
 jte {

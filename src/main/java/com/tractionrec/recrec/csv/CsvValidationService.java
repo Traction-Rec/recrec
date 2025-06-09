@@ -63,9 +63,16 @@ public class CsvValidationService {
 
             // Run validation rules
             List<ValidationIssue> allIssues = new ArrayList<>();
+            ScientificNotationRule.ScientificNotationAnalysis patternAnalysis = null;
+
             for (ValidationRule rule : validationRules) {
                 List<ValidationIssue> ruleIssues = rule.validate(parsedData.data, parsedData.headers);
                 allIssues.addAll(ruleIssues);
+
+                // Run pattern analysis for scientific notation rule
+                if (rule instanceof ScientificNotationRule scientificRule) {
+                    patternAnalysis = scientificRule.analyzePatterns(parsedData.data, parsedData.headers);
+                }
             }
 
             // Determine overall status
@@ -76,7 +83,7 @@ public class CsvValidationService {
 
             String summaryMessage = generateSummaryMessage(allIssues, status);
 
-            return new CsvValidationResult(allIssues, stats, status, canProceed, summaryMessage);
+            return new CsvValidationResult(allIssues, stats, status, canProceed, summaryMessage, patternAnalysis);
 
         } catch (Exception e) {
             return CsvValidationResult.invalid("Error reading file: " + e.getMessage());
@@ -112,6 +119,45 @@ public class CsvValidationService {
             // Return empty preview on error
             return new CsvPreviewData(new String[0][0], new String[0], new HashMap<>(),
                                     new CsvFileStats(0, 0, 0, 0, 0, "unknown", false), 0);
+        }
+    }
+
+    /**
+     * Replace all instances of a specific scientific notation value with user-provided replacement
+     */
+    public File replaceScientificNotationValue(File csvFile, String scientificValue, String replacementValue) {
+        try {
+            String encoding = detectEncoding(csvFile);
+            ParsedCsvData parsedData = parseCsvFile(csvFile, encoding);
+
+            // Replace all instances of the scientific notation value
+            String[][] fixedData = new String[parsedData.data.length][];
+            for (int row = 0; row < parsedData.data.length; row++) {
+                fixedData[row] = new String[parsedData.data[row].length];
+                System.arraycopy(parsedData.data[row], 0, fixedData[row], 0, parsedData.data[row].length);
+
+                // Replace in merchant column
+                if (fixedData[row].length > 0 && scientificValue.equals(fixedData[row][0])) {
+                    fixedData[row][0] = replacementValue;
+                }
+
+                // Replace in ID column
+                if (fixedData[row].length > 1 && scientificValue.equals(fixedData[row][1])) {
+                    fixedData[row][1] = replacementValue;
+                }
+            }
+
+            // Create output file
+            File outputFile = new File(csvFile.getParent(),
+                getReplacedFileName(csvFile.getName()));
+
+            // Write fixed data to new file
+            writeFixedCsvFile(outputFile, fixedData, parsedData.headers, encoding);
+
+            return outputFile;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to replace scientific notation in CSV file: " + e.getMessage(), e);
         }
     }
 
@@ -283,6 +329,20 @@ public class CsvValidationService {
             return nameWithoutExt + "_fixed" + extension;
         } else {
             return originalFileName + "_fixed";
+        }
+    }
+
+    /**
+     * Generate a filename for the replaced CSV file
+     */
+    private String getReplacedFileName(String originalFileName) {
+        int dotIndex = originalFileName.lastIndexOf('.');
+        if (dotIndex > 0) {
+            String nameWithoutExt = originalFileName.substring(0, dotIndex);
+            String extension = originalFileName.substring(dotIndex);
+            return nameWithoutExt + "_replaced" + extension;
+        } else {
+            return originalFileName + "_replaced";
         }
     }
 

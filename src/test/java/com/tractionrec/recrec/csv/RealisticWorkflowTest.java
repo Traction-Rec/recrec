@@ -62,7 +62,7 @@ public class RealisticWorkflowTest {
 
         for (ValidationIssue issue : scientificIssues) {
             assertEquals(0, issue.getLocation().column(), "Scientific notation should be detected in Merchant column");
-            assertTrue(issue.isAutoFixable(), "Scientific notation should be auto-fixable");
+            assertFalse(issue.isAutoFixable(), "Scientific notation should NOT be auto-fixable due to precision risk");
         }
 
         // Step 2: Generate preview
@@ -87,10 +87,10 @@ public class RealisticWorkflowTest {
         try {
             String fixedContent = Files.readString(fixedFile.toPath());
 
-            // Should have converted scientific notation to full numbers
-            assertTrue(fixedContent.contains("1234570000000000"), "1.23457E+15 should be converted");
-            assertTrue(fixedContent.contains("987654000000000"), "9.87654E+14 should be converted");
-            assertTrue(fixedContent.contains("78912300000000"), "7.89123E+13 should be converted");
+            // Scientific notation should NOT be converted (precision risk)
+            assertTrue(fixedContent.contains("1.23457E+15"), "1.23457E+15 should remain unchanged");
+            assertTrue(fixedContent.contains("9.87654E+14"), "9.87654E+14 should remain unchanged");
+            assertTrue(fixedContent.contains("7.89123E+13"), "7.89123E+13 should remain unchanged");
 
             // Normal merchants should be unchanged
             assertTrue(fixedContent.contains("456789"));
@@ -105,26 +105,28 @@ public class RealisticWorkflowTest {
             assertTrue(fixedContent.contains("BIN567890"));
             assertTrue(fixedContent.contains("ACCOUNT123789"));
 
-            // Should not contain scientific notation anymore
-            assertFalse(fixedContent.contains("1.23457E+15"));
-            assertFalse(fixedContent.contains("9.87654E+14"));
-            assertFalse(fixedContent.contains("7.89123E+13"));
+            // Scientific notation should still be present (not converted)
+            assertTrue(fixedContent.contains("1.23457E+15"));
+            assertTrue(fixedContent.contains("9.87654E+14"));
+            assertTrue(fixedContent.contains("7.89123E+13"));
 
         } catch (Exception e) {
             fail("Failed to read fixed file: " + e.getMessage());
         }
 
-        // Step 5: Validate fixed file would pass
+        // Step 5: Validate fixed file (should have same issues since scientific notation not auto-fixed)
         CsvValidationResult fixedResult = service.validateCsv(fixedFile);
 
-        // Should have fewer issues (only empty field issues remain)
-        assertTrue(fixedResult.getIssues().size() < result.getIssues().size());
+        // Should have same number of issues (scientific notation not auto-fixed)
+        assertEquals(result.getIssues().size(), fixedResult.getIssues().size(),
+            "Fixed file should have same issues since scientific notation is not auto-fixed");
 
-        // Should have no scientific notation issues
+        // Should still have scientific notation issues (not auto-fixed)
         long fixedScientificIssues = fixedResult.getIssues().stream()
             .filter(issue -> issue.getType() == IssueType.SCIENTIFIC_NOTATION)
             .count();
-        assertEquals(0, fixedScientificIssues, "Fixed file should have no scientific notation issues");
+        assertEquals(scientificNotationIssues, fixedScientificIssues,
+            "Fixed file should still have scientific notation issues (not auto-fixed)");
 
         // Clean up
         fixedFile.delete();

@@ -136,13 +136,15 @@ public class CsvValidationService {
                 fixedData[row] = new String[parsedData.data[row].length];
                 System.arraycopy(parsedData.data[row], 0, fixedData[row], 0, parsedData.data[row].length);
 
-                // Replace in merchant column
-                if (fixedData[row].length > 0 && scientificValue.equals(fixedData[row][0])) {
+                // Replace in merchant column (trim for comparison to handle whitespace)
+                if (fixedData[row].length > 0 && fixedData[row][0] != null &&
+                    scientificValue.equals(fixedData[row][0].trim())) {
                     fixedData[row][0] = replacementValue;
                 }
 
-                // Replace in ID column
-                if (fixedData[row].length > 1 && scientificValue.equals(fixedData[row][1])) {
+                // Replace in ID column (trim for comparison to handle whitespace)
+                if (fixedData[row].length > 1 && fixedData[row][1] != null &&
+                    scientificValue.equals(fixedData[row][1].trim())) {
                     fixedData[row][1] = replacementValue;
                 }
             }

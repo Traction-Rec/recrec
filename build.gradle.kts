@@ -60,6 +60,13 @@ tasks.jar {
 
 tasks.getByName<Test>("test") {
     useJUnitPlatform()
+
+    // Configure JVM for headless testing (CI environments)
+    // This allows tests that use AWT/Swing components (like ImageIcon) to run without a display
+    jvmArgs(
+        "-Djava.awt.headless=true",
+        "-Dfile.encoding=UTF-8"
+    )
 }
 
 application {

@@ -218,6 +218,18 @@ public class RecRecApplication {
         int originalWidth = baseImage.getWidth(null);
         int originalHeight = baseImage.getHeight(null);
 
+        // Guard against malformed images with invalid dimensions
+        if (originalHeight <= 0 || originalWidth <= 0) {
+            System.err.println("Warning: Invalid image dimensions for square icon - width: " + originalWidth + ", height: " + originalHeight);
+            // Return a simple colored square as fallback
+            BufferedImage fallbackIcon = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = fallbackIcon.createGraphics();
+            g2d.setColor(Color.LIGHT_GRAY);
+            g2d.fillRect(0, 0, size, size);
+            g2d.dispose();
+            return fallbackIcon;
+        }
+
         // Calculate scaling to fit within square while maintaining aspect ratio
         double scale = Math.min((double) size / originalWidth, (double) size / originalHeight);
         int scaledWidth = (int) (originalWidth * scale);
@@ -271,6 +283,13 @@ public class RecRecApplication {
             // Calculate width to maintain aspect ratio
             int originalWidth = logoImage.getWidth(null);
             int originalHeight = logoImage.getHeight(null);
+
+            // Guard against malformed images with invalid dimensions
+            if (originalHeight <= 0 || originalWidth <= 0) {
+                System.err.println("Warning: Invalid logo dimensions - width: " + originalWidth + ", height: " + originalHeight);
+                return null;
+            }
+
             int scaledWidth = (originalWidth * height) / originalHeight;
 
             // Scale the image smoothly

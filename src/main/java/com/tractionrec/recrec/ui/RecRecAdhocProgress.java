@@ -148,6 +148,9 @@ public class RecRecAdhocProgress extends RecRecForm {
 
         QueryItem queryItem = adhocQuery.toQueryItem();
 
+        // Clear any previous results before starting new search
+        state.queryResults = new java.util.ArrayList<>();
+
         // Start the query in a background thread
         CompletableFuture.supplyAsync(() -> {
             try {
@@ -169,9 +172,6 @@ public class RecRecAdhocProgress extends RecRecForm {
                 this.queryComplete = true;
 
                 // Store result in state for results preview
-                if (state.queryResults == null) {
-                    state.queryResults = new java.util.ArrayList<>();
-                }
                 state.queryResults.add(result);
 
                 updateUIForCompletion(result);

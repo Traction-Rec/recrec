@@ -70,6 +70,10 @@ public class RecRecStart extends RecRecForm {
 
     @Override
     void willDisplay() {
+        // Clear any previous query results when returning to start screen
+        // This ensures a fresh start for any new query type
+        state.queryResults = null;
+
         this.inpAccountId.setText(state.accountId);
         this.inpAccountToken.setText(state.accountToken);
         this.queryByRecordIdRadioButton.setSelected(state.queryMode == QueryBy.RECORD_ID);

@@ -404,6 +404,10 @@ public class RecRecAdhocInput extends RecRecForm {
 
     @Override
     public void willDisplay() {
+        // Clear any previous query results when returning to input form
+        // This ensures a fresh start for each new search
+        state.queryResults = null;
+
         // Restore form data if available
         if (state.adhocQueryItem != null) {
             AdhocQueryItem item = state.adhocQueryItem;

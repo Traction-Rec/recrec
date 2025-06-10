@@ -15,6 +15,9 @@ import java.awt.*;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 
+import static com.tractionrec.recrec.RecRecApplication.isDevEnv;
+import static com.tractionrec.recrec.RecRecApplication.isProduction;
+
 /**
  * Simple progress form for ad-hoc queries.
  * Shows "Searching..." while API call is in progress, then displays results.
@@ -252,21 +255,5 @@ public class RecRecAdhocProgress extends RecRecForm {
             }
         }
         return transactionService;
-    }
-
-    /**
-     * Check if running in development environment
-     */
-    private static boolean isDevEnv() {
-        // Check if we're running from IDE or gradle run (development)
-        String classPath = System.getProperty("java.class.path");
-        return classPath.contains("build/classes") || classPath.contains("out/production");
-    }
-
-    /**
-     * Check if running in production environment
-     */
-    private static boolean isProduction() {
-        return "production".equals(System.getProperty("environment"));
     }
 }

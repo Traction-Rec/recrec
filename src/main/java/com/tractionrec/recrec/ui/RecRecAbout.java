@@ -65,8 +65,17 @@ public class RecRecAbout extends JDialog {
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setPreferredSize(new Dimension(400, 300));
 
-        // Application title with icon
-        JLabel titleLabel = new JLabel(StyleUtils.Icons.INFO + "  RecRec Query Tool");
+        // Company logo
+        ImageIcon logoIcon = RecRecApplication.loadLogoIcon(48); // 48px height for about dialog
+        if (logoIcon != null) {
+            JLabel logoLabel = new JLabel(logoIcon);
+            logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            card.add(logoLabel);
+            StyleUtils.addVerticalSpacing(card, StyleUtils.SPACING_MEDIUM);
+        }
+
+        // Application title
+        JLabel titleLabel = new JLabel("RecRec Query Tool");
         titleLabel.setFont(TypographyConstants.FONT_TITLE);
         titleLabel.setForeground(TractionRecTheme.PRIMARY_BLUE);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);

@@ -42,9 +42,9 @@ public class AutoFixTest {
         // Read fixed content
         String fixedContent = Files.readString(fixedFile.toPath());
 
-        // Should have converted scientific notation in Merchant column
-        assertTrue(fixedContent.contains("1230000000000000")); // 1.23E+15 converted
-        assertTrue(fixedContent.contains("0.0000789")); // 7.89e-05 converted
+        // Scientific notation should NOT be converted (precision risk)
+        assertTrue(fixedContent.contains("1.23E+15")); // Should remain unchanged
+        assertTrue(fixedContent.contains("7.89e-05")); // Should remain unchanged
         assertTrue(fixedContent.contains("456789")); // Normal merchant number unchanged
         assertTrue(fixedContent.contains("NormalMerchant")); // Text merchant unchanged
 
@@ -54,9 +54,9 @@ public class AutoFixTest {
         assertTrue(fixedContent.contains("VANTIV345678"));
         assertTrue(fixedContent.contains("ABC123"));
 
-        // Should not contain scientific notation anymore
-        assertFalse(fixedContent.contains("1.23E+15"));
-        assertFalse(fixedContent.contains("7.89e-05"));
+        // Scientific notation should still be present (not converted)
+        assertTrue(fixedContent.contains("1.23E+15"));
+        assertTrue(fixedContent.contains("7.89e-05"));
     }
 
     @Test

@@ -31,11 +31,10 @@ public class ScientificNotationRule implements ValidationRule {
             if (data[row].length > MERCHANT_COLUMN) {
                 String merchantValue = data[row][MERCHANT_COLUMN];
                 if (merchantValue != null && isScientificNotation(merchantValue.trim())) {
-                    String fixedValue = convertFromScientificNotation(merchantValue.trim());
-                    issues.add(ValidationIssue.scientificNotation(
+                    issues.add(createScientificNotationError(
                         new CellLocation(row, MERCHANT_COLUMN),
-                        merchantValue,
-                        fixedValue
+                        merchantValue.trim(),
+                        "Merchant"
                     ));
                 }
             }
@@ -44,11 +43,10 @@ public class ScientificNotationRule implements ValidationRule {
             if (data[row].length > ID_COLUMN) {
                 String idValue = data[row][ID_COLUMN];
                 if (idValue != null && isScientificNotation(idValue.trim())) {
-                    String fixedValue = convertFromScientificNotation(idValue.trim());
-                    issues.add(ValidationIssue.scientificNotation(
+                    issues.add(createScientificNotationError(
                         new CellLocation(row, ID_COLUMN),
-                        idValue,
-                        fixedValue
+                        idValue.trim(),
+                        "ID"
                     ));
                 }
             }
@@ -59,35 +57,18 @@ public class ScientificNotationRule implements ValidationRule {
 
     @Override
     public boolean canAutoFix() {
-        return true;
+        return false; // Never auto-fix scientific notation due to precision loss risk
     }
 
     @Override
     public String[][] autoFix(String[][] data, String[] headers) {
-        // Create a copy of the data to avoid modifying the original
+        // No auto-fix for scientific notation due to precision loss risk
+        // Return data unchanged
         String[][] fixedData = new String[data.length][];
-
         for (int row = 0; row < data.length; row++) {
             fixedData[row] = new String[data[row].length];
             System.arraycopy(data[row], 0, fixedData[row], 0, data[row].length);
-
-            // Fix merchant column first (most commonly affected)
-            if (fixedData[row].length > MERCHANT_COLUMN && fixedData[row][MERCHANT_COLUMN] != null) {
-                String merchantValue = fixedData[row][MERCHANT_COLUMN].trim();
-                if (isScientificNotation(merchantValue)) {
-                    fixedData[row][MERCHANT_COLUMN] = convertFromScientificNotation(merchantValue);
-                }
-            }
-
-            // Fix ID column
-            if (fixedData[row].length > ID_COLUMN && fixedData[row][ID_COLUMN] != null) {
-                String idValue = fixedData[row][ID_COLUMN].trim();
-                if (isScientificNotation(idValue)) {
-                    fixedData[row][ID_COLUMN] = convertFromScientificNotation(idValue);
-                }
-            }
         }
-
         return fixedData;
     }
 
@@ -121,6 +102,102 @@ public class ScientificNotationRule implements ValidationRule {
         } catch (NumberFormatException e) {
             // If conversion fails, return original value
             return scientificValue;
+        }
+    }
+
+    /**
+     * Create a scientific notation error with helpful guidance
+     */
+    private ValidationIssue createScientificNotationError(CellLocation location, String scientificValue, String fieldName) {
+        String guidance = generateUserGuidance(fieldName);
+
+        return new ValidationIssue(
+            com.tractionrec.recrec.domain.IssueSeverity.ERROR,
+            com.tractionrec.recrec.domain.IssueType.SCIENTIFIC_NOTATION,
+            String.format("%s field contains scientific notation: '%s'", fieldName, scientificValue),
+            location,
+            guidance,
+            false, // Never auto-fixable
+            scientificValue,
+            null
+        );
+    }
+
+    /**
+     * Generate user guidance for fixing scientific notation
+     */
+    private String generateUserGuidance(String fieldName) {
+        return String.format(
+            "Manual correction required. %s field in scientific notation may have lost precision. " +
+            "To prevent this: 1) Format Excel column as 'Text' before pasting data, " +
+            "2) Use apostrophe prefix ('123456) to force text format, or " +
+            "3) Save as CSV (Comma delimited) with columns pre-formatted as Text.",
+            fieldName
+        );
+    }
+
+    /**
+     * Analyze scientific notation patterns to detect common scenarios
+     */
+    public ScientificNotationAnalysis analyzePatterns(String[][] data, String[] headers) {
+        List<String> merchantScientificValues = new ArrayList<>();
+        List<String> idScientificValues = new ArrayList<>();
+
+        for (String[] row : data) {
+            if (row.length > MERCHANT_COLUMN && row[MERCHANT_COLUMN] != null) {
+                String merchantValue = row[MERCHANT_COLUMN].trim();
+                if (isScientificNotation(merchantValue)) {
+                    merchantScientificValues.add(merchantValue);
+                }
+            }
+
+            if (row.length > ID_COLUMN && row[ID_COLUMN] != null) {
+                String idValue = row[ID_COLUMN].trim();
+                if (isScientificNotation(idValue)) {
+                    idScientificValues.add(idValue);
+                }
+            }
+        }
+
+        return new ScientificNotationAnalysis(merchantScientificValues, idScientificValues);
+    }
+
+    /**
+     * Analysis result for scientific notation patterns
+     */
+    public static class ScientificNotationAnalysis {
+        private final List<String> merchantValues;
+        private final List<String> idValues;
+
+        public ScientificNotationAnalysis(List<String> merchantValues, List<String> idValues) {
+            this.merchantValues = merchantValues;
+            this.idValues = idValues;
+        }
+
+        public boolean hasAllSameMerchantValues() {
+            return merchantValues.size() > 1 &&
+                   merchantValues.stream().distinct().count() == 1;
+        }
+
+        public boolean hasAllSameIdValues() {
+            return idValues.size() > 1 &&
+                   idValues.stream().distinct().count() == 1;
+        }
+
+        public String getCommonMerchantValue() {
+            return hasAllSameMerchantValues() ? merchantValues.get(0) : null;
+        }
+
+        public String getCommonIdValue() {
+            return hasAllSameIdValues() ? idValues.get(0) : null;
+        }
+
+        public int getMerchantScientificCount() {
+            return merchantValues.size();
+        }
+
+        public int getIdScientificCount() {
+            return idValues.size();
         }
     }
 }

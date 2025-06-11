@@ -434,6 +434,9 @@ public class RecRecCsvValidation extends RecRecForm {
         // Update controls
         updateControlsState();
 
+        // Check for scientific notation patterns and offer replacement
+        checkForScientificNotationPatterns();
+
         // Update next button
         updateNextButtonState();
     }
@@ -504,6 +507,113 @@ public class RecRecCsvValidation extends RecRecForm {
                            (ignoreWarningsCheckbox.isSelected() &&
                             validationResult.getOverallStatus() == com.tractionrec.recrec.domain.ValidationStatus.WARNING);
         nextButton.setEnabled(canProceed);
+    }
+
+    private void checkForScientificNotationPatterns() {
+        if (validationResult == null || validationResult.getPatternAnalysis() == null) {
+            return;
+        }
+
+        var analysis = validationResult.getPatternAnalysis();
+
+        // Check if all merchant scientific notation values are the same
+        if (analysis.hasAllSameMerchantValues() && analysis.getMerchantScientificCount() > 1) {
+            showScientificNotationReplacementDialog(
+                "Merchant",
+                analysis.getCommonMerchantValue(),
+                analysis.getMerchantScientificCount()
+            );
+        }
+        // Check if all ID scientific notation values are the same
+        else if (analysis.hasAllSameIdValues() && analysis.getIdScientificCount() > 1) {
+            showScientificNotationReplacementDialog(
+                "ID",
+                analysis.getCommonIdValue(),
+                analysis.getIdScientificCount()
+            );
+        }
+    }
+
+    private void showScientificNotationReplacementDialog(String fieldName, String scientificValue, int count) {
+        String message = String.format(
+            "All %s values appear to be the same scientific notation: '%s'\n" +
+            "This suggests they should all be the same actual value.\n\n" +
+            "Found in %d rows. Would you like to replace all instances?",
+            fieldName, scientificValue, count
+        );
+
+        int choice = JOptionPane.showConfirmDialog(
+            rootPanel,
+            message,
+            "Replace Scientific Notation Values?",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (choice == JOptionPane.YES_OPTION) {
+            showReplacementValueDialog(fieldName, scientificValue);
+        }
+    }
+
+    private void showReplacementValueDialog(String fieldName, String scientificValue) {
+        String replacementValue = JOptionPane.showInputDialog(
+            rootPanel,
+            String.format("Enter the correct %s value to replace '%s':", fieldName, scientificValue),
+            "Replace Value",
+            JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (replacementValue != null && !replacementValue.trim().isEmpty()) {
+            performScientificNotationReplacement(scientificValue, replacementValue.trim());
+        }
+    }
+
+    private void performScientificNotationReplacement(String scientificValue, String replacementValue) {
+        if (state.inputFile == null) {
+            return;
+        }
+
+        // Show progress
+        statusLabel.setText("Replacing scientific notation values...");
+        validationProgress.setVisible(true);
+
+        // Perform replacement in background
+        CompletableFuture.supplyAsync(() -> {
+            return validationService.replaceScientificNotationValue(state.inputFile, scientificValue, replacementValue);
+        }).thenAccept(replacedFile -> {
+            SwingUtilities.invokeLater(() -> {
+                validationProgress.setVisible(false);
+
+                // Show success message with option to use replaced file
+                int useReplaced = JOptionPane.showConfirmDialog(rootPanel,
+                    String.format("Replaced all instances of '%s' with '%s'\n" +
+                                "Replaced file created: %s\n\n" +
+                                "Would you like to use the replaced file for processing?",
+                                scientificValue, replacementValue, replacedFile.getName()),
+                    "Replacement Complete",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.INFORMATION_MESSAGE);
+
+                if (useReplaced == JOptionPane.YES_OPTION) {
+                    // Update state to use replaced file and re-validate
+                    state.inputFile = replacedFile;
+                    performValidation();
+                } else {
+                    statusLabel.setText("Replacement completed. Replaced file saved as: " + replacedFile.getName());
+                }
+            });
+        }).exceptionally(throwable -> {
+            SwingUtilities.invokeLater(() -> {
+                validationProgress.setVisible(false);
+                statusLabel.setText("Replacement failed: " + throwable.getMessage());
+
+                JOptionPane.showMessageDialog(rootPanel,
+                    "Failed to replace scientific notation values:\n" + throwable.getMessage(),
+                    "Replacement Error",
+                    JOptionPane.ERROR_MESSAGE);
+            });
+            return null;
+        });
     }
 
     /**

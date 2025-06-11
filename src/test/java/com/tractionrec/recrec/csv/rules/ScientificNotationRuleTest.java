@@ -30,8 +30,8 @@ public class ScientificNotationRuleTest {
 
         for (ValidationIssue issue : issues) {
             assertEquals(IssueType.SCIENTIFIC_NOTATION, issue.getType());
-            assertTrue(issue.isAutoFixable());
-            assertNotNull(issue.getSuggestedValue());
+            assertFalse(issue.isAutoFixable(), "Scientific notation should not be auto-fixable due to precision risk");
+            assertTrue(issue.getDescription().contains("scientific notation"));
         }
 
         // Verify that most issues are in the Merchant column (column 0)
@@ -63,18 +63,17 @@ public class ScientificNotationRuleTest {
         assertEquals("1.23E+15", testData[0][0]);
         assertEquals("2.34E+10", testData[3][1]);
 
-        // Fixed data should have converted values in Merchant column
-        assertEquals("1230000000000000", fixedData[0][0]);
-        assertEquals("456789", fixedData[1][0]); // Unchanged
-        assertEquals("0.0000789", fixedData[2][0]);
+        // NO data should be changed - auto-fix disabled for scientific notation
+        assertEquals("1.23E+15", fixedData[0][0]); // Should remain unchanged
+        assertEquals("456789", fixedData[1][0]); // Should remain unchanged
+        assertEquals("7.89e-05", fixedData[2][0]); // Should remain unchanged
+        assertEquals("NormalMerchant", fixedData[3][0]); // Should remain unchanged
 
-        // Fixed data should have converted values in ID column
-        assertEquals("23400000000", fixedData[3][1]);
-
-        // IDs that weren't scientific notation should be unchanged
+        // All values should remain unchanged
         assertEquals("SETUP123456", fixedData[0][1]);
         assertEquals("RECORD789012", fixedData[1][1]);
         assertEquals("VANTIV345678", fixedData[2][1]);
+        assertEquals("2.34E+10", fixedData[3][1]); // Should remain unchanged
     }
 
     @Test

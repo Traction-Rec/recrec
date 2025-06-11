@@ -5,6 +5,8 @@ import com.jcabi.manifests.Manifests;
 import com.tractionrec.recrec.ui.RecFormStack;
 import com.tractionrec.recrec.ui.RecRecAbout;
 import com.tractionrec.recrec.ui.RecRecStart;
+import com.tractionrec.recrec.ui.TractionRecTheme;
+import com.tractionrec.recrec.ui.TypographyConstants;
 
 import javax.swing.*;
 
@@ -16,7 +18,7 @@ public class RecRecApplication {
         // Configure DNS caching for better performance with high concurrent requests
         configureDNSCaching();
 
-        FlatLightLaf.setup();
+        TractionRecTheme.setup();
         RecRecState state = new RecRecState();
         JFrame applicationFrame = new JFrame("RecRec");
         applicationFrame.setJMenuBar(buildMenuBar());
@@ -53,11 +55,42 @@ public class RecRecApplication {
 
     private static JMenuBar buildMenuBar() {
         JMenuBar topMenuBar = new JMenuBar();
-        topMenuBar.add( Box.createHorizontalStrut( 10 ) );
-        topMenuBar.add(new JLabel("RecRec"));
-        topMenuBar.add( Box.createHorizontalStrut( 10 ) );
-        topMenuBar.add( new JLabel("|") );
+
+        // Force the background color to ensure it's applied
+        topMenuBar.setBackground(TractionRecTheme.PRIMARY_BLUE);
+        topMenuBar.setOpaque(true);
+        topMenuBar.setBorderPainted(false);
+
+        topMenuBar.add(Box.createHorizontalStrut(10));
+
+        JLabel titleLabel = new JLabel("RecRec");
+        titleLabel.setForeground(TractionRecTheme.TEXT_INVERSE);
+        titleLabel.setFont(TypographyConstants.FONT_SUBHEADING);
+        topMenuBar.add(titleLabel);
+
+        topMenuBar.add(Box.createHorizontalStrut(10));
+
+        JLabel separator = new JLabel("|");
+        separator.setForeground(TractionRecTheme.TEXT_INVERSE);
+        topMenuBar.add(separator);
+
         JMenu helpMenu = new JMenu("Help");
+        helpMenu.setForeground(TractionRecTheme.TEXT_INVERSE);
+        helpMenu.setBackground(TractionRecTheme.PRIMARY_BLUE);
+        helpMenu.setOpaque(true);
+        helpMenu.setBorderPainted(false);
+
+        // Force white text color for all states - multiple approaches
+        helpMenu.putClientProperty("Menu.foreground", TractionRecTheme.TEXT_INVERSE);
+        helpMenu.putClientProperty("Menu.selectionForeground", TractionRecTheme.TEXT_INVERSE);
+        helpMenu.putClientProperty("Menu.hoverForeground", TractionRecTheme.TEXT_INVERSE);
+
+        // Override the UI delegate to force white text
+        SwingUtilities.invokeLater(() -> {
+            helpMenu.setForeground(TractionRecTheme.TEXT_INVERSE);
+            helpMenu.repaint();
+        });
+
         JMenuItem aboutItem = new JMenuItem("About");
         aboutItem.addActionListener(e -> {
             RecRecAbout dialog = new RecRecAbout();
@@ -66,6 +99,7 @@ public class RecRecApplication {
         });
         helpMenu.add(aboutItem);
         topMenuBar.add(helpMenu);
+
         return topMenuBar;
     }
 

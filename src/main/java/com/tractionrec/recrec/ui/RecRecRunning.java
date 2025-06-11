@@ -23,6 +23,8 @@ import gg.jte.TemplateEngine;
 import gg.jte.resolve.DirectoryCodeResolver;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.io.File;
 import java.io.FileWriter;
@@ -42,6 +44,10 @@ public class RecRecRunning extends RecRecForm {
     private final ScheduledExecutorService timeExecutorService = Executors.newScheduledThreadPool(1);
     private JPanel rootPanel;
     private JLabel txtProgress;
+    private SegmentedProgressBar segmentedProgressBar;
+    private JLabel progressLabel;
+    private StatisticsTable statisticsTable;
+    private JLabel systemInfoLabel;
     private JButton nextButton;
     private List<Future<QueryResult>> futureResults;
 
@@ -57,9 +63,14 @@ public class RecRecRunning extends RecRecForm {
     private final AdaptiveRateLimiter rateLimiter = new AdaptiveRateLimiter(
             INITIAL_CONCURRENT_REQUESTS, MIN_CONCURRENT_REQUESTS, MAX_CONCURRENT_REQUESTS);
 
-    public RecRecRunning(RecRecState state, NavigationAction navAction) {
-        super(state, navAction);
+    public RecRecRunning(RecRecState state, NavigationAction navigationAction) {
+        super(state, navigationAction);
         this.queryExecutorService = Executors.newVirtualThreadPerTaskExecutor();
+        setupUI();
+        setupEventHandlers();
+    }
+
+    private void setupEventHandlers() {
         nextButton.addActionListener(e -> {
             JFileChooser outputChooser = new JFileChooser();
             int result = outputChooser.showDialog(rootPanel, "Save results");
@@ -80,7 +91,7 @@ public class RecRecRunning extends RecRecForm {
                     ex.printStackTrace();
                 }
                 state.reset();
-                navAction.onNext();
+                navigationAction.onNext();
             }
         });
         timeExecutorService.scheduleAtFixedRate(() -> {
@@ -110,21 +121,60 @@ public class RecRecRunning extends RecRecForm {
                 });
             }
 
-            // Enable next button only when pending requests are zero
-            SwingUtilities.invokeLater(() -> {
-                nextButton.setEnabled(pendingCount.get() == 0);
-            });
+            // Calculate progress percentage
+            int total = totalCount.get();
+            int completed = total - pendingCount.get();
+            int progressPercent = total > 0 ? (completed * 100) / total : 0;
 
-            // Only show rate limiter info in dev mode
-            if (isDevEnv()) {
-                String rateLimiterStatus = rateLimiter.getStats();
-                String connectionInfo = getConnectionInfo();
-                txtProgress.setText(String.format("<html><p>Total: %d</p><p>Pending: %d</p><p>Error: %d</p><p>Not Found: %d</p><p>Success: %d</p><p><b>%s</b></p><p><i>%s</i></p></html>",
-                    totalCount.get(), pendingCount.get(), errorCount.get(), notFoundCount.get(), successCount.get(), rateLimiterStatus, connectionInfo));
-            } else {
-                txtProgress.setText(String.format("<html><p>Total: %d</p><p>Pending: %d</p><p>Error: %d</p><p>Not Found: %d</p><p>Success: %d</p></html>",
-                    totalCount.get(), pendingCount.get(), errorCount.get(), notFoundCount.get(), successCount.get()));
-            }
+            // Update UI components
+            SwingUtilities.invokeLater(() -> {
+                // Update segmented progress bar
+                segmentedProgressBar.updateProgress(
+                    totalCount.get(),
+                    successCount.get(),
+                    notFoundCount.get(),
+                    errorCount.get(),
+                    pendingCount.get()
+                );
+
+                // Update tooltip for progress bar
+                segmentedProgressBar.setToolTipText(segmentedProgressBar.getTooltipText());
+
+                // Update progress label with enhanced feedback
+                if (pendingCount.get() == 0 && total > 0) {
+                    progressLabel.setText("✓ Processing complete! " + total + " queries processed.");
+                    progressLabel.setForeground(TractionRecTheme.SUCCESS_GREEN);
+                    nextButton.setEnabled(true);
+                } else if (total > 0) {
+                    progressLabel.setText(String.format("Processing %d of %d queries...", completed, total));
+                    progressLabel.setForeground(TractionRecTheme.PRIMARY_BLUE);
+                } else {
+                    progressLabel.setText("Initializing...");
+                    progressLabel.setForeground(TractionRecTheme.TEXT_SECONDARY);
+                }
+
+                // Update statistics table
+                statisticsTable.updateStatistics(
+                    totalCount.get(),
+                    successCount.get(),
+                    notFoundCount.get(),
+                    errorCount.get(),
+                    pendingCount.get()
+                );
+
+                // Update system info label if in dev mode
+                if (isDevEnv()) {
+                    String rateLimiterStatus = rateLimiter.getStats();
+                    String connectionInfo = getConnectionInfo();
+                    systemInfoLabel.setText(String.format(
+                        "<html><div style='font-family: monospace; font-size: 10px; color: #6B7280;'><p><strong>System Info:</strong></p><p>• %s</p><p>• %s</p></div></html>",
+                        rateLimiterStatus, connectionInfo
+                    ));
+                    systemInfoLabel.setVisible(true);
+                } else {
+                    systemInfoLabel.setVisible(false);
+                }
+            });
         }, 1, 1, TimeUnit.SECONDS);
     }
 
@@ -266,15 +316,106 @@ public class RecRecRunning extends RecRecForm {
 
     protected void setupUI() {
         rootPanel = new JPanel();
-        rootPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         rootPanel.setLayout(new BoxLayout(rootPanel, BoxLayout.Y_AXIS));
+        rootPanel.setBorder(BorderFactory.createEmptyBorder(
+            StyleUtils.SPACING_XXLARGE,
+            StyleUtils.SPACING_XXLARGE,
+            StyleUtils.SPACING_XXLARGE,
+            StyleUtils.SPACING_XXLARGE
+        ));
+        rootPanel.setBackground(Color.WHITE);
         rootPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        rootPanel.setAlignmentY(Component.TOP_ALIGNMENT);
-        txtProgress = new JLabel();
-        txtProgress.setAlignmentX(Component.LEFT_ALIGNMENT);
-        txtProgress.setText("Running....");
-        rootPanel.add(txtProgress);
 
+        // Form Title
+        JLabel titleLabel = StyleUtils.createFormTitle("Processing Queries");
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(titleLabel);
+
+        JLabel subtitleLabel = new JLabel("Please wait while we process your data queries...");
+        subtitleLabel.setFont(TypographyConstants.FONT_SMALL);
+        subtitleLabel.setForeground(TractionRecTheme.TEXT_SECONDARY);
+        subtitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(subtitleLabel);
+        StyleUtils.addVerticalSpacing(rootPanel, StyleUtils.SPACING_XLARGE); // Less spacing to make room for table
+
+        // Progress Section
+        JPanel progressSection = createProgressSection();
+        progressSection.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(progressSection);
+        StyleUtils.addVerticalSpacing(rootPanel, StyleUtils.SPACING_XXLARGE);
+
+        // Navigation Section
+        JPanel navigationSection = createNavigationSection();
+        navigationSection.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(navigationSection);
+    }
+
+    private JPanel createProgressSection() {
+        JPanel section = StyleUtils.createElevatedCard();
+        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
+
+        // Section title with icon
+        JLabel sectionTitle = StyleUtils.createSectionTitle(StyleUtils.Icons.REFRESH + "  Query Progress");
+        section.add(sectionTitle);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_LARGE);
+
+        // Progress label
+        progressLabel = new JLabel("Initializing...");
+        progressLabel.setFont(TypographyConstants.FONT_BODY_BOLD);
+        progressLabel.setForeground(TractionRecTheme.PRIMARY_BLUE);
+        progressLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.add(progressLabel);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_MEDIUM);
+
+        // Segmented progress bar in a container to prevent resizing
+        segmentedProgressBar = new SegmentedProgressBar();
+        // Initialize with test data to make it visible
+        segmentedProgressBar.updateProgress(100, 60, 20, 10, 10);
+
+        JPanel progressBarContainer = new JPanel();
+        progressBarContainer.setLayout(new BoxLayout(progressBarContainer, BoxLayout.X_AXIS));
+        progressBarContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
+        progressBarContainer.add(segmentedProgressBar);
+        progressBarContainer.add(Box.createHorizontalGlue()); // Push to left
+
+        section.add(progressBarContainer);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_LARGE);
+
+        // Statistics section title
+        JLabel statisticsTitle = StyleUtils.createSectionTitle("Detailed Statistics");
+        section.add(statisticsTitle);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_MEDIUM);
+
+        // Statistics table
+        statisticsTable = new StatisticsTable();
+        statisticsTable.setFillsViewportHeight(true);
+
+        JScrollPane tableScrollPane = new JScrollPane(statisticsTable);
+        tableScrollPane.setPreferredSize(new Dimension(500, 140)); // Wider, but shorter since no scrolling needed
+        tableScrollPane.setMinimumSize(new Dimension(500, 140));
+        tableScrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, 140));
+        tableScrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
+        tableScrollPane.setBorder(StyleUtils.createInputBorder());
+        tableScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER); // No vertical scroll
+        tableScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        section.add(tableScrollPane);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_MEDIUM);
+
+        // System info label (only visible in dev mode)
+        systemInfoLabel = new JLabel();
+        systemInfoLabel.setFont(TypographyConstants.FONT_CAPTION);
+        systemInfoLabel.setForeground(TractionRecTheme.TEXT_SECONDARY);
+        systemInfoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        systemInfoLabel.setVisible(false); // Initially hidden
+        section.add(systemInfoLabel);
+
+        return section;
+    }
+
+
+
+    private JPanel createNavigationSection() {
         JPanel navigationPanel = new JPanel(new BorderLayout());
         navigationPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -283,13 +424,14 @@ public class RecRecRunning extends RecRecForm {
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
         buttonPanel.add(Box.createHorizontalGlue()); // Push button to the right
 
-        nextButton = new JButton();
-        nextButton.setText("Next >");
+        nextButton = StyleUtils.createIconButton("View Results", StyleUtils.Icons.ARROW_RIGHT);
         nextButton.setEnabled(false); // Initially disabled until all requests complete
+        StyleUtils.styleButtonPrimary(nextButton, true); // Use large button
         buttonPanel.add(nextButton);
 
         navigationPanel.add(buttonPanel, BorderLayout.CENTER);
-        rootPanel.add(navigationPanel);
+
+        return navigationPanel;
     }
 
     /**

@@ -30,12 +30,21 @@ public class ValidationIssueListRenderer extends DefaultListCellRenderer {
             };
             setIcon(icon);
 
-            // Create multi-line text
+            // Create multi-line text with prominent row information
+            String locationText = "General";
+            if (issue.getLocation() != null) {
+                locationText = String.format("Row %d, Column %d",
+                    issue.getLocation().row() + 1, // 1-based for display
+                    issue.getLocation().column() + 1);
+            }
+
             String html = String.format(
-                "<html><b>%s</b><br/>%s<br/><small>%s</small></html>",
+                "<html><div style='padding: 2px;'><b style='color: #1E3A8A;'>%s</b><br/>" +
+                "<span style='color: #374151;'>%s</span><br/>" +
+                "<small style='color: #6B7280; font-weight: bold;'>📍 %s</small></div></html>",
                 issue.getType().getDisplayName(),
                 issue.getDescription(),
-                issue.getLocation() != null ? issue.getLocation().toString() : "General"
+                locationText
             );
             setText(html);
 

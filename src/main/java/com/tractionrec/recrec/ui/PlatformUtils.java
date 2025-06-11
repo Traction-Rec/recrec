@@ -7,12 +7,12 @@ import java.awt.*;
  * in window decorations, DPI scaling, and font rendering across operating systems.
  */
 public class PlatformUtils {
-    
+
     private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
     private static final boolean IS_WINDOWS = OS_NAME.contains("windows");
     private static final boolean IS_MAC = OS_NAME.contains("mac");
     private static final boolean IS_LINUX = OS_NAME.contains("linux");
-    
+
     /**
      * Get platform-specific window decoration insets (title bar, borders, etc.)
      * These values are estimates based on typical platform defaults.
@@ -29,7 +29,7 @@ public class PlatformUtils {
             return new Insets(30, 5, 5, 5);
         }
     }
-    
+
     /**
      * Get additional padding to account for platform-specific rendering differences
      */
@@ -45,7 +45,7 @@ public class PlatformUtils {
             return new Insets(8, 8, 8, 8);
         }
     }
-    
+
     /**
      * Get recommended minimum window size for the platform
      */
@@ -58,7 +58,7 @@ public class PlatformUtils {
             return new Dimension(320, 220);
         }
     }
-    
+
     /**
      * Get the default font scaling factor for the platform
      */
@@ -67,7 +67,7 @@ public class PlatformUtils {
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         int dpi = toolkit.getScreenResolution();
         double scaling = dpi / 96.0; // 96 DPI is the standard baseline
-        
+
         // Platform-specific adjustments
         if (IS_WINDOWS && scaling > 1.0) {
             // Windows high DPI can be more aggressive
@@ -80,14 +80,14 @@ public class PlatformUtils {
             return Math.max(scaling, 1.0);
         }
     }
-    
+
     /**
      * Check if the platform typically has larger window decorations
      */
     public static boolean hasLargeWindowDecorations() {
         return IS_WINDOWS;
     }
-    
+
     /**
      * Check if the platform benefits from resizable windows as a fallback
      */
@@ -95,7 +95,7 @@ public class PlatformUtils {
         // Linux window managers vary widely, so resizable is safer
         return IS_LINUX;
     }
-    
+
     /**
      * Get platform name for debugging/logging
      */

@@ -25,7 +25,7 @@ import java.util.*;
  */
 public class CsvValidationService {
 
-    private static final int MAX_PREVIEW_ROWS = 100;
+    private static final int MAX_PREVIEW_ROWS = 50000; // Increased for paging support
     private static final long MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024; // 100MB
 
     private final List<ValidationRule> validationRules;
@@ -96,7 +96,9 @@ public class CsvValidationService {
     public CsvPreviewData generatePreview(File csvFile, int maxRows) {
         try {
             String encoding = detectEncoding(csvFile);
-            ParsedCsvData parsedData = parseCsvFile(csvFile, encoding, Math.min(maxRows, MAX_PREVIEW_ROWS));
+            // Use the smaller of requested rows or our maximum limit
+            int actualMaxRows = Math.min(maxRows, MAX_PREVIEW_ROWS);
+            ParsedCsvData parsedData = parseCsvFile(csvFile, encoding, actualMaxRows);
             CsvFileStats stats = generateStats(csvFile, parsedData, encoding);
 
             // Run validation on preview data to identify cell issues

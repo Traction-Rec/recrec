@@ -91,87 +91,153 @@ public class RecRecStart extends RecRecForm {
 
     protected void setupUI() {
         rootPanel = new JPanel();
-        rootPanel.setBorder( BorderFactory.createEmptyBorder(20,20,20,20) );
         rootPanel.setLayout(new BoxLayout(rootPanel, BoxLayout.Y_AXIS));
-        rootPanel.setAlignmentX( Component.LEFT_ALIGNMENT );
-        rootPanel.setAlignmentY( Component.TOP_ALIGNMENT );
+        rootPanel.setBorder(BorderFactory.createEmptyBorder(
+            StyleUtils.SPACING_XXLARGE,
+            StyleUtils.SPACING_XXLARGE,
+            StyleUtils.SPACING_XXLARGE,
+            StyleUtils.SPACING_XXLARGE
+        ));
+        rootPanel.setBackground(Color.WHITE);
+        rootPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel inputsContainer = new JPanel();
-        inputsContainer.setLayout(new FlowLayout(FlowLayout.LEFT));
-        inputsContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // Form Title with subtitle
+        JLabel titleLabel = StyleUtils.createFormTitle("RecRec Query Tool");
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(titleLabel);
 
-        JPanel inputLabelPanel = new JPanel();
-        inputLabelPanel.setLayout(new BoxLayout(inputLabelPanel, BoxLayout.Y_AXIS));
+        JLabel subtitleLabel = new JLabel("Configure your API credentials and select a query type");
+        subtitleLabel.setFont(TypographyConstants.FONT_SMALL);
+        subtitleLabel.setForeground(TractionRecTheme.TEXT_SECONDARY);
+        subtitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(subtitleLabel);
+        StyleUtils.addVerticalSpacing(rootPanel, StyleUtils.SPACING_XXXLARGE);
 
-        final JLabel lblAccountId = new JLabel();
-        lblAccountId.setText("Account Id");
-        inputLabelPanel.add(lblAccountId);
-        final JLabel lblAccountToken = new JLabel();
-        lblAccountToken.setText("Account Token");
-        inputLabelPanel.add(lblAccountToken);
+        // Credentials Section
+        JPanel credentialsSection = createCredentialsSection();
+        credentialsSection.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(credentialsSection);
+        StyleUtils.addVerticalSpacing(rootPanel, StyleUtils.SPACING_XLARGE);
 
-        JPanel inputPanel = new JPanel();
-        inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.Y_AXIS));
+        // Query Type Section
+        JPanel queryTypeSection = createQueryTypeSection();
+        queryTypeSection.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(queryTypeSection);
+        StyleUtils.addVerticalSpacing(rootPanel, StyleUtils.SPACING_XXLARGE);
+
+        // Navigation Section
+        JPanel navigationSection = createNavigationSection();
+        navigationSection.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(navigationSection);
+    }
+
+    private JPanel createCredentialsSection() {
+        JPanel section = StyleUtils.createElevatedCard();
+        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
+
+        // Section title with icon
+        JLabel sectionTitle = StyleUtils.createSectionTitle(StyleUtils.Icons.SETTINGS + "  API Credentials");
+        section.add(sectionTitle);
+
+        // Section description
+        JLabel sectionDesc = new JLabel("Enter your Element Express API credentials");
+        sectionDesc.setFont(TypographyConstants.FONT_CAPTION);
+        sectionDesc.setForeground(TractionRecTheme.TEXT_SECONDARY);
+        sectionDesc.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.add(sectionDesc);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_LARGE);
+
+        // Account ID field
         inpAccountId = new JTextField();
-        inputPanel.add(inpAccountId, BorderLayout.CENTER);
+        inpAccountId.setToolTipText("Your Element Express Account ID");
+        StyleUtils.styleTextField(inpAccountId);
+        inpAccountId.setMaximumSize(new Dimension(350, StyleUtils.INPUT_HEIGHT));
+        JPanel accountIdRow = StyleUtils.createFormRow("Account ID", inpAccountId);
+        section.add(accountIdRow);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_LARGE);
+
+        // Account Token field
         inpAccountToken = new JPasswordField();
-        inputPanel.add(inpAccountToken, BorderLayout.CENTER);
-        inputPanel.setPreferredSize(new Dimension(200, inputPanel.getPreferredSize().height));
+        inpAccountToken.setToolTipText("Your Element Express Account Token (kept secure)");
+        StyleUtils.stylePasswordField(inpAccountToken);
+        inpAccountToken.setMaximumSize(new Dimension(350, StyleUtils.INPUT_HEIGHT));
+        JPanel accountTokenRow = StyleUtils.createFormRow("Account Token", inpAccountToken);
+        section.add(accountTokenRow);
 
-        lblAccountToken.setLabelFor(inpAccountToken);
-        lblAccountId.setLabelFor(inpAccountId);
+        return section;
+    }
 
-        inputsContainer.add(inputLabelPanel);
-        inputsContainer.add(inputPanel);
-        inputsContainer.setMaximumSize(new Dimension(inputsContainer.getMaximumSize().width, 0));
-        rootPanel.add(inputsContainer);
+    private JPanel createQueryTypeSection() {
+        JPanel section = StyleUtils.createElevatedCard();
+        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
 
-        final JPanel buttonGroupPanel = new JPanel();
-        buttonGroupPanel.setLayout(new BoxLayout(buttonGroupPanel, BoxLayout.Y_AXIS));
-        buttonGroupPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        queryByRecordIdRadioButton = new JRadioButton();
-        queryByRecordIdRadioButton.setText("Query by record id");
-        queryByRecordIdRadioButton.setToolTipText("Salesforce record id used as ReferenceNumber in WorldPay");
-        buttonGroupPanel.add(queryByRecordIdRadioButton);
-        queryByVantivIdRadioButton = new JRadioButton();
-        queryByVantivIdRadioButton.setText("Query by vantiv id");
-        queryByVantivIdRadioButton.setToolTipText("WorldPay transaction id, numeric, can be found on salesforce record");
-        buttonGroupPanel.add(queryByVantivIdRadioButton);
-        queryBySetupIdRadioButton = new JRadioButton();
-        queryBySetupIdRadioButton.setText("Query by setup id");
-        queryBySetupIdRadioButton.setToolTipText("Salesforce rec's Setup id - used in hosted payment form credit card payments");
-        buttonGroupPanel.add(queryBySetupIdRadioButton);
-        queryPaymentAccountsButton = new JRadioButton();
-        queryPaymentAccountsButton.setText("Query payment accounts by token");
-        queryPaymentAccountsButton.setToolTipText("Payment tokens found on stored account records. Token column name is still id");
-        buttonGroupPanel.add(queryPaymentAccountsButton);
-        queryBINButton = new JRadioButton();
-        queryBINButton.setText("Query BIN by payment token");
-        queryBINButton.setToolTipText("Payment tokens found on stored account records. Token column name is still id");
-        buttonGroupPanel.add(queryBINButton);
+        // Section title with icon
+        JLabel sectionTitle = StyleUtils.createSectionTitle(StyleUtils.Icons.SEARCH + "  Query Type");
+        section.add(sectionTitle);
+
+        // Section description
+        JLabel sectionDesc = new JLabel("Choose the type of data you want to query");
+        sectionDesc.setFont(TypographyConstants.FONT_CAPTION);
+        sectionDesc.setForeground(TractionRecTheme.TEXT_SECONDARY);
+        sectionDesc.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.add(sectionDesc);
+        StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_LARGE);
+
+        // Create radio buttons
+        queryByRecordIdRadioButton = new JRadioButton("Query by record ID");
+        queryByRecordIdRadioButton.setToolTipText("Salesforce record ID used as ReferenceNumber in WorldPay");
+        StyleUtils.styleRadioButton(queryByRecordIdRadioButton);
+
+        queryByVantivIdRadioButton = new JRadioButton("Query by Vantiv ID");
+        queryByVantivIdRadioButton.setToolTipText("WorldPay transaction ID, numeric, can be found on Salesforce record");
+        StyleUtils.styleRadioButton(queryByVantivIdRadioButton);
+
+        queryBySetupIdRadioButton = new JRadioButton("Query by setup ID");
+        queryBySetupIdRadioButton.setToolTipText("Salesforce record's Setup ID - used in hosted payment form credit card payments");
+        StyleUtils.styleRadioButton(queryBySetupIdRadioButton);
+
+        queryPaymentAccountsButton = new JRadioButton("Query payment accounts by token");
+        queryPaymentAccountsButton.setToolTipText("Payment tokens found on stored account records. Token column name is still ID");
+        StyleUtils.styleRadioButton(queryPaymentAccountsButton);
+
+        queryBINButton = new JRadioButton("Query BIN by payment token");
+        queryBINButton.setToolTipText("Payment tokens found on stored account records. Token column name is still ID");
+        StyleUtils.styleRadioButton(queryBINButton);
+
+        // Group radio buttons
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(queryByRecordIdRadioButton);
         buttonGroup.add(queryByVantivIdRadioButton);
         buttonGroup.add(queryBySetupIdRadioButton);
         buttonGroup.add(queryPaymentAccountsButton);
         buttonGroup.add(queryBINButton);
-        rootPanel.add(buttonGroupPanel);
 
-        JPanel navigationPanel = new JPanel(new BorderLayout());
-        navigationPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // Add radio buttons to section with spacing
+        JRadioButton[] buttons = {
+            queryByRecordIdRadioButton,
+            queryByVantivIdRadioButton,
+            queryBySetupIdRadioButton,
+            queryPaymentAccountsButton,
+            queryBINButton
+        };
 
-        // Create button panel for right alignment
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
-        buttonPanel.add(Box.createHorizontalGlue()); // Push button to the right
+        for (int i = 0; i < buttons.length; i++) {
+            buttons[i].setAlignmentX(Component.LEFT_ALIGNMENT);
+            section.add(buttons[i]);
+            if (i < buttons.length - 1) {
+                StyleUtils.addVerticalSpacing(section, StyleUtils.SPACING_SMALL);
+            }
+        }
 
-        nextButton = new JButton();
+        return section;
+    }
+
+    private JPanel createNavigationSection() {
+        nextButton = StyleUtils.createIconButton("Next", StyleUtils.Icons.ARROW_RIGHT);
         nextButton.setEnabled(false);
-        nextButton.setText("Next >");
-        buttonPanel.add(nextButton);
+        StyleUtils.styleButtonPrimary(nextButton, true); // Use large button
 
-        navigationPanel.add(buttonPanel, BorderLayout.CENTER);
-        rootPanel.add(navigationPanel);
+        return StyleUtils.createNavigationPanel(nextButton);
     }
 
     @Override

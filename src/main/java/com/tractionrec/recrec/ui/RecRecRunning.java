@@ -44,6 +44,7 @@ public class RecRecRunning extends RecRecForm {
     private JLabel systemInfoLabel;
     private JButton nextButton;
     private List<Future<QueryResult>> futureResults;
+    private boolean isCompleted = false; // Track if all queries have completed
 
     // Cached service instances to reuse HttpClient connections and avoid port exhaustion
     private static volatile TransactionQueryService transactionService;
@@ -60,6 +61,12 @@ public class RecRecRunning extends RecRecForm {
     public RecRecRunning(RecRecState state, NavigationAction navigationAction) {
         super(state, navigationAction);
         this.queryExecutorService = Executors.newVirtualThreadPerTaskExecutor();
+
+        // Reset completion state if this is a fresh query (no existing results)
+        if (state.queryResults == null || state.queryResults.isEmpty()) {
+            isCompleted = false;
+        }
+
         setupUI();
         setupEventHandlers();
     }
@@ -138,6 +145,7 @@ public class RecRecRunning extends RecRecForm {
                     progressLabel.setText("✓ Processing complete! " + total + " queries processed.");
                     progressLabel.setForeground(TractionRecTheme.SUCCESS_GREEN);
                     nextButton.setEnabled(true);
+                    isCompleted = true; // Mark as completed
                 } else if (total > 0) {
                     progressLabel.setText(String.format("Processing %d of %d queries...", completed, total));
                     progressLabel.setForeground(TractionRecTheme.PRIMARY_BLUE);
@@ -182,24 +190,28 @@ public class RecRecRunning extends RecRecForm {
     }
 
     public void willDisplay() {
-        try {
-            this.futureResults = Files.lines(state.inputFile.toPath()).skip(1)
-                    .filter(line -> !line.trim().isEmpty()) // Filter out empty or whitespace-only lines
-                    .map(l -> {
-                        String[] cols = l.split(",", 2);
-                        if (cols.length < 2) {
-                            System.err.println("Warning: Skipping malformed CSV line (expected 2 columns): " + l);
-                            return null; // Return null for malformed lines
-                        }
-                        return new QueryItem(cols[0].trim(), cols[1].trim(), state.queryMode);
-                    })
-                    .filter(item -> item != null) // Filter out null items from malformed lines
-                    .map(this::getCallable)
-                    .map(queryExecutorService::submit)
-                    .collect(Collectors.toList());
-        } catch (IOException e) {
-            e.printStackTrace();
+        // Only start queries if not already completed (prevents restart on back navigation)
+        if (!isCompleted) {
+            try {
+                this.futureResults = Files.lines(state.inputFile.toPath()).skip(1)
+                        .filter(line -> !line.trim().isEmpty()) // Filter out empty or whitespace-only lines
+                        .map(l -> {
+                            String[] cols = l.split(",", 2);
+                            if (cols.length < 2) {
+                                System.err.println("Warning: Skipping malformed CSV line (expected 2 columns): " + l);
+                                return null; // Return null for malformed lines
+                            }
+                            return new QueryItem(cols[0].trim(), cols[1].trim(), state.queryMode);
+                        })
+                        .filter(item -> item != null) // Filter out null items from malformed lines
+                        .map(this::getCallable)
+                        .map(queryExecutorService::submit)
+                        .collect(Collectors.toList());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+        // If already completed, the scheduled task will continue to show the completed state
     }
 
     private Callable<QueryResult> getCallable(QueryItem item) {

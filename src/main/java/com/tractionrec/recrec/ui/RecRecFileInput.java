@@ -35,12 +35,19 @@ public class RecRecFileInput extends RecRecForm {
             chooseFileButton.setText(StyleUtils.Icons.CHECK + "  Selected: " + state.inputFile.getName());
             StyleUtils.styleButtonPrimary(chooseFileButton); // Change to primary style when file selected
         }
-        switch (state.queryMode) {
-            case SETUP_ID -> lblQueryingBy.setText("You are querying by setup id.");
-            case RECORD_ID -> lblQueryingBy.setText("You are querying by record id.");
-            case VANTIV_ID -> lblQueryingBy.setText("You are querying by vantiv id.");
-            case PAYMENT_ACCOUNT -> lblQueryingBy.setText("You are querying by payment account token.");
+
+        // Handle null queryMode gracefully (can happen during state reset navigation)
+        if (state.queryMode != null) {
+            switch (state.queryMode) {
+                case SETUP_ID -> lblQueryingBy.setText("You are querying by setup id.");
+                case RECORD_ID -> lblQueryingBy.setText("You are querying by record id.");
+                case VANTIV_ID -> lblQueryingBy.setText("You are querying by vantiv id.");
+                case PAYMENT_ACCOUNT -> lblQueryingBy.setText("You are querying by payment account token.");
+            }
+        } else {
+            lblQueryingBy.setText("Please select a query type.");
         }
+
         updateNextEnabled();
     }
 

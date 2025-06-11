@@ -5,6 +5,11 @@ public interface NavigationAction {
     void onNext();
 
     /**
+     * Navigate back to the start screen, clearing the entire navigation stack
+     */
+    void backToStart();
+
+    /**
      * Update the next form destination dynamically
      */
     default void updateNextForm(RecRecForm nextForm) {

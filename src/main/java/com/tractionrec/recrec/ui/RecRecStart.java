@@ -74,8 +74,10 @@ public class RecRecStart extends RecRecForm {
         // This ensures a fresh start for any new query type
         state.queryResults = null;
 
-        this.inpAccountId.setText(state.accountId);
-        this.inpAccountToken.setText(state.accountToken);
+        this.inpAccountId.setText(state.accountId != null ? state.accountId : "");
+        this.inpAccountToken.setText(state.accountToken != null ? state.accountToken : "");
+
+        // Handle null queryMode gracefully (can happen during state reset)
         this.queryByRecordIdRadioButton.setSelected(state.queryMode == QueryBy.RECORD_ID);
         this.queryByVantivIdRadioButton.setSelected(state.queryMode == QueryBy.VANTIV_ID);
         this.queryBySetupIdRadioButton.setSelected(state.queryMode == QueryBy.SETUP_ID);

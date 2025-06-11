@@ -124,6 +124,13 @@ public class RecFormStack implements NavigationAction {
     }
 
     @Override
+    public void backToStart() {
+        // Clear the entire navigation stack and return to the initial form
+        formStack.clear();
+        setForm(initialForm);
+    }
+
+    @Override
     public void updateNextForm(RecRecForm nextForm) {
         this.nextForm = nextForm;
     }

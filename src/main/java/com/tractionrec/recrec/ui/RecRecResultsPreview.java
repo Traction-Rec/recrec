@@ -848,10 +848,7 @@ public class RecRecResultsPreview extends RecRecForm {
         // Reset the application state for a fresh start
         state.reset();
 
-        // Navigate back to the start screen
-        // We need to go back multiple levels to reach the start
-        navigationAction.onBack(); // Back to progress/running screen
-        navigationAction.onBack(); // Back to input screen
-        navigationAction.onBack(); // Back to start screen
+        // Navigate back to the start screen using the clean backToStart method
+        navigationAction.backToStart();
     }
 }

@@ -40,6 +40,13 @@ public class RecRecAdhocProgress extends RecRecForm {
 
     public RecRecAdhocProgress(RecRecState state, NavigationAction navigationAction) {
         super(state, navigationAction);
+
+        // Reset completion state if this is a fresh query (no existing results)
+        if (state.queryResults == null || state.queryResults.isEmpty()) {
+            queryComplete = false;
+            queryResult = null;
+        }
+
         setupUI();
         // Don't start query here - wait for willDisplay()
     }
@@ -217,8 +224,13 @@ public class RecRecAdhocProgress extends RecRecForm {
 
     @Override
     public void willDisplay() {
-        // Start the query when the form is actually displayed
-        startQuery();
+        // Only start query if not already completed (prevents restart on back navigation)
+        if (!queryComplete) {
+            startQuery();
+        } else {
+            // Query already completed - show the completed state
+            updateUIForCompletion(queryResult);
+        }
     }
 
     @Override

@@ -520,9 +520,18 @@ public class RecRecResultsPreview extends RecRecForm {
         fileChooser.setDialogTitle("Export Query Results");
         fileChooser.setFileFilter(new FileNameExtensionFilter("CSV Files (*.csv)", "csv"));
 
-        // Set default filename based on query type
+        // Set current directory to input file's directory if available
+        if (state.inputFile != null && state.inputFile.getParentFile() != null) {
+            fileChooser.setCurrentDirectory(state.inputFile.getParentFile());
+        }
+
+        // Set default filename with collision detection
         String defaultFileName = getDefaultExportFileName();
-        fileChooser.setSelectedFile(new File(defaultFileName));
+        File defaultFile = state.inputFile != null && state.inputFile.getParentFile() != null
+            ? new File(state.inputFile.getParentFile(), defaultFileName)
+            : new File(defaultFileName);
+        File finalDefaultFile = resolveFileNameCollision(defaultFile);
+        fileChooser.setSelectedFile(finalDefaultFile);
 
         int result = fileChooser.showSaveDialog(rootPanel);
         if (result != JFileChooser.APPROVE_OPTION) {
@@ -591,9 +600,23 @@ public class RecRecResultsPreview extends RecRecForm {
     }
 
     /**
-     * Generate default export filename based on query type and timestamp
+     * Generate default export filename based on original input file or query type
      */
     private String getDefaultExportFileName() {
+        // For CSV-based queries, use original filename + " - results"
+        if (state.inputFile != null) {
+            String originalName = state.inputFile.getName();
+            int dotIndex = originalName.lastIndexOf('.');
+            if (dotIndex > 0) {
+                String nameWithoutExt = originalName.substring(0, dotIndex);
+                String extension = originalName.substring(dotIndex);
+                return nameWithoutExt + " - results" + extension;
+            } else {
+                return originalName + " - results.csv";
+            }
+        }
+
+        // For ad-hoc queries, fall back to timestamp-based naming
         String queryTypeName = getQueryTypeName().toLowerCase().replace(" ", "_");
         String timestamp = java.time.LocalDateTime.now()
             .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
@@ -639,6 +662,38 @@ public class RecRecResultsPreview extends RecRecForm {
                 return mapper.schemaFor(BINQueryOutputRow.class).withHeader();
             }
         });
+    }
+
+    /**
+     * Resolve filename collisions by appending numbers in parentheses
+     */
+    private File resolveFileNameCollision(File originalFile) {
+        if (!originalFile.exists()) {
+            return originalFile;
+        }
+
+        String originalPath = originalFile.getAbsolutePath();
+        String nameWithoutExt;
+        String extension;
+
+        int dotIndex = originalPath.lastIndexOf('.');
+        if (dotIndex > 0) {
+            nameWithoutExt = originalPath.substring(0, dotIndex);
+            extension = originalPath.substring(dotIndex);
+        } else {
+            nameWithoutExt = originalPath;
+            extension = "";
+        }
+
+        int counter = 1;
+        File candidateFile;
+        do {
+            String newPath = nameWithoutExt + " (" + counter + ")" + extension;
+            candidateFile = new File(newPath);
+            counter++;
+        } while (candidateFile.exists());
+
+        return candidateFile;
     }
 
     /**

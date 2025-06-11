@@ -667,13 +667,14 @@ public class RecRecResultsPreview extends RecRecForm {
 
         /**
          * Extract column names from the OutputRow class using @JsonPropertyOrder annotation
-         * or field names as fallback
+         * or field names as fallback. Only includes columns for fields that actually exist.
          */
         private String[] extractColumnNames(Class<? extends OutputRow> clazz) {
             // First try to get column order from @JsonPropertyOrder annotation
             JsonPropertyOrder propertyOrder = clazz.getAnnotation(JsonPropertyOrder.class);
             if (propertyOrder != null && propertyOrder.value().length > 0) {
                 return Arrays.stream(propertyOrder.value())
+                    .filter(fieldName -> findField(clazz, fieldName) != null) // Only include existing fields
                     .map(this::formatColumnName)
                     .toArray(String[]::new);
             }

@@ -5,11 +5,12 @@ public enum QueryBy {
     VANTIV_ID,
     SETUP_ID,
     PAYMENT_ACCOUNT,
-    BIN_QUERY;
+    BIN_QUERY,
+    ADHOC_SEARCH;
 
     public <R> R accept(QueryTargetVisitor<R> visitor) {
         switch (this) {
-            case RECORD_ID, SETUP_ID, VANTIV_ID -> {
+            case RECORD_ID, SETUP_ID, VANTIV_ID, ADHOC_SEARCH -> {
                 return visitor.visitTransactionQuery();
             }
             case PAYMENT_ACCOUNT -> {

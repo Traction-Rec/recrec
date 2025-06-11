@@ -32,6 +32,7 @@ dependencies {
     implementation("org.apache.commons:commons-io:1.3.2")
     implementation("com.ibm.icu:icu4j:74.2")
     implementation("com.jcabi:jcabi-manifests:1.1")
+    implementation("com.github.lgooddatepicker:LGoodDatePicker:11.2.1")
 }
 
 jte {
@@ -59,6 +60,13 @@ tasks.jar {
 
 tasks.getByName<Test>("test") {
     useJUnitPlatform()
+
+    // Configure JVM for headless testing (CI environments)
+    // This allows tests that use AWT/Swing components (like ImageIcon) to run without a display
+    jvmArgs(
+        "-Djava.awt.headless=true",
+        "-Dfile.encoding=UTF-8"
+    )
 }
 
 application {

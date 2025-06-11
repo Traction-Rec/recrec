@@ -1,5 +1,6 @@
 package com.tractionrec.recrec.domain.result;
 
+import com.tractionrec.recrec.domain.QueryBy;
 import com.tractionrec.recrec.domain.QueryItem;
 import com.tractionrec.recrec.domain.ResultStatus;
 import com.tractionrec.recrec.domain.express.Transaction;
@@ -21,7 +22,12 @@ public class TransactionQueryResult extends QueryResult<Transaction, Transaction
             return List.of(new TransactionQueryOutputRow(this));
         }
         List<TransactionQueryOutputRow> rows = new ArrayList<>(this.expressEntities.size());
-        final boolean multipleResults = this.expressEntities.size() > 1;
+
+        // For ad-hoc queries, "multiple results" is misleading since there's only one search criteria
+        // In CSV queries: one input row → multiple results = potential duplicate charge (meaningful)
+        // In ad-hoc queries: one search criteria → multiple results = normal behavior (misleading)
+        final Boolean multipleResults = this.item.mode() == QueryBy.ADHOC_SEARCH ? null : this.expressEntities.size() > 1;
+
         for (Transaction current : this.expressEntities) {
             rows.add(new TransactionQueryOutputRow(this, current, multipleResults));
         }

@@ -18,7 +18,7 @@ public class TransactionQueryOutputRow extends OutputRow {
     // Always available
     public String recordId;
     public String paymentAccountId;
-    public boolean multipleResults;
+    public Boolean multipleResults; // Nullable - null for ad-hoc queries where it's misleading
     public String billingAddress1;
     public String billingCity;
     public String billingState;
@@ -51,7 +51,7 @@ public class TransactionQueryOutputRow extends OutputRow {
         super(result);
     }
 
-    public TransactionQueryOutputRow(QueryResult<Transaction, TransactionQueryOutputRow> result, Transaction tx, boolean multipleResults) {
+    public TransactionQueryOutputRow(QueryResult<Transaction, TransactionQueryOutputRow> result, Transaction tx, Boolean multipleResults) {
         this(result);
         this.multipleResults = multipleResults;
         this.recordId = tx.recordId;

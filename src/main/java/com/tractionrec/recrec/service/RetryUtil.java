@@ -3,6 +3,7 @@ package com.tractionrec.recrec.service;
 import java.net.BindException;
 import java.net.ConnectException;
 import java.net.http.HttpConnectTimeoutException;
+import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.Random;
@@ -35,6 +36,95 @@ public class RetryUtil {
     public static <T> T retryWithBackoffForConnectionExhaustion(Callable<T> operation) throws Exception {
         // Use longer delays for connection exhaustion scenarios
         return retryWithBackoff(operation, 5, Duration.ofSeconds(5), Duration.ofSeconds(60));
+    }
+
+    /**
+     * Retry HTTP requests with backoff, handling both exceptions and HTTP status codes
+     */
+    public static HttpResponse<String> retryHttpRequestWithBackoff(Callable<HttpResponse<String>> operation) throws Exception {
+        return retryHttpRequestWithBackoff(operation, DEFAULT_MAX_RETRIES, DEFAULT_INITIAL_DELAY, DEFAULT_MAX_DELAY);
+    }
+
+    /**
+     * Retry HTTP requests with custom parameters, handling both exceptions and HTTP status codes
+     */
+    public static HttpResponse<String> retryHttpRequestWithBackoff(
+            Callable<HttpResponse<String>> operation,
+            int maxRetries,
+            Duration initialDelay,
+            Duration maxDelay) throws Exception {
+
+        Exception lastException = null;
+        HttpResponse<String> lastResponse = null;
+        Duration currentDelay = initialDelay;
+
+        for (int attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                HttpResponse<String> response = operation.call();
+                lastResponse = response;
+
+                // Check if we should retry based on status code
+                if (!shouldRetryHttpResponse(response) || attempt == maxRetries) {
+                    return response;
+                }
+
+                // Calculate delay with jitter for rate limiting
+                long delayMs = calculateDelayWithJitter(currentDelay);
+
+                System.err.printf("HTTP request failed with status %d (attempt %d/%d), retrying in %dms%n",
+                    response.statusCode(), attempt + 1, maxRetries + 1, delayMs);
+
+                try {
+                    Thread.sleep(delayMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Retry interrupted", ie);
+                }
+
+                // Exponential backoff with max limit
+                currentDelay = Duration.ofMillis(
+                    Math.min(
+                        (long) (currentDelay.toMillis() * DEFAULT_BACKOFF_MULTIPLIER),
+                        maxDelay.toMillis()
+                    )
+                );
+
+            } catch (Exception e) {
+                lastException = e;
+
+                // Only retry on specific timeout/connection exceptions
+                if (!shouldRetry(e) || attempt == maxRetries) {
+                    throw e;
+                }
+
+                // Calculate delay with jitter
+                long delayMs = calculateDelayWithJitter(currentDelay);
+
+                System.err.printf("Request failed (attempt %d/%d), retrying in %dms: %s%n",
+                    attempt + 1, maxRetries + 1, delayMs, e.getMessage());
+
+                try {
+                    Thread.sleep(delayMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Retry interrupted", ie);
+                }
+
+                // Exponential backoff with max limit
+                currentDelay = Duration.ofMillis(
+                    Math.min(
+                        (long) (currentDelay.toMillis() * DEFAULT_BACKOFF_MULTIPLIER),
+                        maxDelay.toMillis()
+                    )
+                );
+            }
+        }
+
+        // If we get here, we exhausted retries due to HTTP status codes
+        if (lastResponse != null) {
+            return lastResponse; // Return the last response even if it has a bad status code
+        }
+        throw lastException; // This shouldn't happen, but just in case
     }
 
     /**
@@ -84,6 +174,19 @@ public class RetryUtil {
         }
 
         throw lastException;
+    }
+
+    /**
+     * Determine if an HTTP response should trigger a retry based on status code
+     */
+    private static boolean shouldRetryHttpResponse(HttpResponse<String> response) {
+        int statusCode = response.statusCode();
+
+        // Retry on rate limiting (429) and server errors (5xx)
+        return statusCode == 429 || // Too Many Requests
+               statusCode == 502 || // Bad Gateway
+               statusCode == 503 || // Service Unavailable
+               statusCode == 504;   // Gateway Timeout
     }
 
     /**

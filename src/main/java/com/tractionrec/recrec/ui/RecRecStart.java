@@ -17,6 +17,7 @@ public class RecRecStart extends RecRecForm {
     private JRadioButton queryBySetupIdRadioButton;
     private JRadioButton queryPaymentAccountsButton;
     private JRadioButton queryBINButton;
+    private JRadioButton queryAdhocSearchButton;
     private JButton nextButton;
     private JPanel rootPanel;
 
@@ -24,49 +25,65 @@ public class RecRecStart extends RecRecForm {
         super(state, navAction);
         inpAccountId.addKeyListener(new KeyAdapter() {
             @Override
-            public void keyTyped(KeyEvent e) {
-                super.keyTyped(e);
+            public void keyReleased(KeyEvent e) {
+                super.keyReleased(e);
                 updateNextEnabled();
             }
         });
         inpAccountToken.addKeyListener(new KeyAdapter() {
             @Override
-            public void keyTyped(KeyEvent e) {
-                super.keyTyped(e);
+            public void keyReleased(KeyEvent e) {
+                super.keyReleased(e);
                 updateNextEnabled();
             }
         });
         queryByRecordIdRadioButton.addActionListener(e -> {
             updateNextEnabled();
+            updateNextFormDestination();
         });
         queryByVantivIdRadioButton.addActionListener(e -> {
             updateNextEnabled();
+            updateNextFormDestination();
         });
         queryBySetupIdRadioButton.addActionListener(e -> {
             updateNextEnabled();
+            updateNextFormDestination();
         });
         queryPaymentAccountsButton.addActionListener(e -> {
             updateNextEnabled();
+            updateNextFormDestination();
         });
         queryBINButton.addActionListener(e -> {
             updateNextEnabled();
+            updateNextFormDestination();
+        });
+        queryAdhocSearchButton.addActionListener(e -> {
+            updateNextEnabled();
+            updateNextFormDestination();
         });
         nextButton.addActionListener(e -> navigationAction.onNext());
     }
 
     private boolean isUserFinished() {
-        return !inpAccountId.getText().isBlank() && inpAccountToken.getPassword().length > 0 && (queryByRecordIdRadioButton.isSelected() || queryBySetupIdRadioButton.isSelected() || queryByVantivIdRadioButton.isSelected() || queryPaymentAccountsButton.isSelected() || queryBINButton.isSelected());
+        return !inpAccountId.getText().isBlank() && inpAccountToken.getPassword().length > 0 && (queryByRecordIdRadioButton.isSelected() || queryBySetupIdRadioButton.isSelected() || queryByVantivIdRadioButton.isSelected() || queryPaymentAccountsButton.isSelected() || queryBINButton.isSelected() || queryAdhocSearchButton.isSelected());
     }
 
     @Override
     void willDisplay() {
-        this.inpAccountId.setText(state.accountId);
-        this.inpAccountToken.setText(state.accountToken);
+        // Clear any previous query results when returning to start screen
+        // This ensures a fresh start for any new query type
+        state.queryResults = null;
+
+        this.inpAccountId.setText(state.accountId != null ? state.accountId : "");
+        this.inpAccountToken.setText(state.accountToken != null ? state.accountToken : "");
+
+        // Handle null queryMode gracefully (can happen during state reset)
         this.queryByRecordIdRadioButton.setSelected(state.queryMode == QueryBy.RECORD_ID);
         this.queryByVantivIdRadioButton.setSelected(state.queryMode == QueryBy.VANTIV_ID);
         this.queryBySetupIdRadioButton.setSelected(state.queryMode == QueryBy.SETUP_ID);
         this.queryPaymentAccountsButton.setSelected(state.queryMode == QueryBy.PAYMENT_ACCOUNT);
         this.queryBINButton.setSelected(state.queryMode == QueryBy.BIN_QUERY);
+        this.queryAdhocSearchButton.setSelected(state.queryMode == QueryBy.ADHOC_SEARCH);
     }
 
     @Override
@@ -78,15 +95,31 @@ public class RecRecStart extends RecRecForm {
         if (queryBySetupIdRadioButton.isSelected()) state.queryMode = QueryBy.SETUP_ID;
         if (queryPaymentAccountsButton.isSelected()) state.queryMode = QueryBy.PAYMENT_ACCOUNT;
         if (queryBINButton.isSelected()) state.queryMode = QueryBy.BIN_QUERY;
+        if (queryAdhocSearchButton.isSelected()) state.queryMode = QueryBy.ADHOC_SEARCH;
     }
 
     @Override
     public RecRecForm whatIsNext() {
-        return new RecRecFileInput(state, navigationAction);
+        // Route to different forms based on current radio button selection
+        if (queryAdhocSearchButton != null && queryAdhocSearchButton.isSelected()) {
+            return new RecRecAdhocInput(state, navigationAction);
+        } else {
+            return new RecRecFileInput(state, navigationAction);
+        }
     }
 
     private void updateNextEnabled() {
         nextButton.setEnabled(isUserFinished());
+    }
+
+    private void updateNextFormDestination() {
+        RecRecForm nextForm;
+        if (queryAdhocSearchButton != null && queryAdhocSearchButton.isSelected()) {
+            nextForm = new RecRecAdhocInput(state, navigationAction);
+        } else {
+            nextForm = new RecRecFileInput(state, navigationAction);
+        }
+        navigationAction.updateNextForm(nextForm);
     }
 
     protected void setupUI() {
@@ -204,6 +237,10 @@ public class RecRecStart extends RecRecForm {
         queryBINButton.setToolTipText("Payment tokens found on stored account records. Token column name is still ID");
         StyleUtils.styleRadioButton(queryBINButton);
 
+        queryAdhocSearchButton = new JRadioButton("Ad-hoc transaction search");
+        queryAdhocSearchButton.setToolTipText("Search transactions by date range, type, amount, or approval number without CSV input");
+        StyleUtils.styleRadioButton(queryAdhocSearchButton);
+
         // Group radio buttons
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(queryByRecordIdRadioButton);
@@ -211,6 +248,7 @@ public class RecRecStart extends RecRecForm {
         buttonGroup.add(queryBySetupIdRadioButton);
         buttonGroup.add(queryPaymentAccountsButton);
         buttonGroup.add(queryBINButton);
+        buttonGroup.add(queryAdhocSearchButton);
 
         // Add radio buttons to section with spacing
         JRadioButton[] buttons = {
@@ -218,7 +256,8 @@ public class RecRecStart extends RecRecForm {
             queryByVantivIdRadioButton,
             queryBySetupIdRadioButton,
             queryPaymentAccountsButton,
-            queryBINButton
+            queryBINButton,
+            queryAdhocSearchButton
         };
 
         for (int i = 0; i < buttons.length; i++) {

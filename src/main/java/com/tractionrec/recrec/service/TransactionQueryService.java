@@ -150,10 +150,8 @@ public class TransactionQueryService extends QueryService {
                 System.err.println("Error at character position: " + errorPos);
                 logXmlSample(xmlData, "Parse Error Context", errorPos);
             }
-
-            // Try fallback parsing strategies
-            return attemptFallbackParsing(xmlData, item, ex);
-
+            ex.printStackTrace();
+            return null;
         } catch (Exception ex) {
             System.err.println("Unexpected error in parseTransactionData:");
             System.err.println("Query Item: " + item);
@@ -250,65 +248,4 @@ public class TransactionQueryService extends QueryService {
         }
         System.err.println("=== End " + context + " ===");
     }
-
-    /**
-     * Attempt fallback parsing strategies when primary parsing fails
-     */
-    private List<Transaction> attemptFallbackParsing(String xml, QueryItem item, JsonParseException originalError) {
-        System.err.println("Attempting fallback parsing strategies for query: " + item);
-
-        try {
-            // Strategy 1: Try to truncate at the error position and parse partial data
-            if (originalError.getLocation() != null) {
-                long errorPos = originalError.getLocation().getCharOffset();
-                if (errorPos > 1000) { // Only try if we have substantial data before the error
-                    String truncatedXml = findLastCompleteTransaction(xml, errorPos);
-                    if (truncatedXml != null) {
-                        System.err.println("Attempting to parse truncated XML (" + truncatedXml.length() + " chars)");
-                        List<Transaction> partialResults = mapper.readValue(truncatedXml, new TypeReference<List<Transaction>>() {});
-                        System.err.println("Fallback parsing successful: recovered " + partialResults.size() + " transactions");
-                        return partialResults;
-                    }
-                }
-            }
-
-            // Strategy 2: Try more aggressive XML cleaning
-            String aggressivelyCleaned = xml
-                .replaceAll("[^\\x20-\\x7E\\x0A\\x0D]", "") // Remove non-printable chars except newlines
-                .replaceAll("\\*+", "ASTERISK"); // Replace asterisks entirely
-
-            System.err.println("Attempting aggressive XML cleaning");
-            List<Transaction> cleanedResults = mapper.readValue(aggressivelyCleaned, new TypeReference<List<Transaction>>() {});
-            System.err.println("Aggressive cleaning successful: parsed " + cleanedResults.size() + " transactions");
-            return cleanedResults;
-
-        } catch (Exception fallbackEx) {
-            System.err.println("All fallback parsing strategies failed: " + fallbackEx.getMessage());
-        }
-
-        return null; // All strategies failed
-    }
-
-    /**
-     * Find the last complete transaction element before an error position
-     */
-    private String findLastCompleteTransaction(String xml, long errorPos) {
-        try {
-            String beforeError = xml.substring(0, (int)errorPos);
-
-            // Find the last complete transaction closing tag
-            int lastTransactionEnd = beforeError.lastIndexOf("</Transaction>");
-            if (lastTransactionEnd > 0) {
-                // Find the corresponding array closing
-                int arrayStart = beforeError.indexOf("[");
-                if (arrayStart >= 0) {
-                    return beforeError.substring(0, lastTransactionEnd + "</Transaction>".length()) + "]";
-                }
-            }
-        } catch (Exception ex) {
-            System.err.println("Failed to find last complete transaction: " + ex.getMessage());
-        }
-        return null;
-    }
-
 }
